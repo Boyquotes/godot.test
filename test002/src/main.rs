@@ -16,24 +16,20 @@ lazy_static! {
 #[tokio::main]
  async fn main() {
     let sock = UdpSocket::bind(ipadd::Conf::local_server().parse::<SocketAddr>().unwrap()).await.unwrap();
-    let field_name = String::from("type");
-    let field_value = String::from("IP");
+
+    
     let mut map = HashMap::new();
-    map.insert(field_name, field_value);
+    map.insert("type", "IP");
 
-    let buf = serde_json::to_vec(&map).unwrap();
-
-
-
+    let send_buf = serde_json::to_vec(&map).unwrap();
     let addr = ipadd::Conf::remote_server();
-
-    let len = sock.send_to(&buf, addr).await.unwrap();
+    let len = sock.send_to(&send_buf, addr).await.unwrap();
     println!("{:?} bytes sent", len);
 
-    let mut buf2 = [0; 1024];
-    let (len, addr) = sock.recv_from(&mut buf2).await.unwrap();
+    let mut recv_buf = [0; 1024];
+    let (len, addr) = sock.recv_from(&mut recv_buf).await.unwrap();
     println!("{:?} bytes received from {:?}", len, addr);
-    let obj:HashMap<String,String> = serde_json::from_slice(&buf2[..len]).unwrap();
+    let obj:HashMap<String,String> = serde_json::from_slice(&recv_buf[..len]).unwrap();
     println!("obj is {:?}",obj);
 
     match obj.get("object") {
