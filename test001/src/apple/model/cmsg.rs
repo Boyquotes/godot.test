@@ -14,11 +14,10 @@ pub struct CMsg {
  */
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub enum Class {
-    NAT,
+    IP,
     ROOM,
     STATS,
     ACTION,
-    ROLES,
 }
 
 /**
@@ -97,6 +96,8 @@ impl Buf {
             Ok(s) => s.trim_matches(char::from(0)),
             Err(err) => return Err(err.into()),
         };
+     
+
         let obj = match serde_json::from_str(&str) {
             Ok(obj) => obj,
             Err(err) => return Err(err.into()),
