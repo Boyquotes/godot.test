@@ -1,5 +1,6 @@
 use super::*;
-use model::{Result,cmsg,room};
+use crate::apple::Result;
+use model::{cmsg,room};
 use conf::{buffer,ipadd};
 
 /**
@@ -7,7 +8,7 @@ use conf::{buffer,ipadd};
  */
 pub fn get_ipa() -> String {
     let h = cmsg::Head {
-        cs: cmsg::Class::NAT,
+        cs: cmsg::Class::IP,
         seq: 0,
         next: 1,
     };
@@ -91,7 +92,7 @@ impl UdpServer {
         godot_print!("upd接收数据长度:{:?},发送源地址：{:?}", len, addr);
         let head = buf.get_head()?;
         match head.cs {
-            cmsg::Class::NAT => {
+            cmsg::Class::IP => {
                 // 获取公网IP
                 let ipa: String = buf.get_content()?;
                 println!("得到公网地址：{:?}", ipa);
