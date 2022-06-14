@@ -1,16 +1,12 @@
 #[macro_use]
 extern crate lazy_static;
 use tokio::{net::UdpSocket};
-use std::{io, net::SocketAddr, sync::Arc};
-use flume::{unbounded, Receiver, Sender};
+use std::net::SocketAddr;
 use std::collections::HashMap;
 mod apple;
 use apple::conf::ipadd;
 use serde::{Deserialize, Serialize};
-lazy_static! {
-    // static ref S_CMSG:(Sender<cmsg::CMsg>, Receiver<cmsg::CMsg>) = unbounded();
-}
-
+use bytes::{BytesMut, BufMut};
 
 
 #[tokio::main]
@@ -19,14 +15,20 @@ lazy_static! {
 
     
     let mut map = HashMap::new();
-    map.insert("type", "IP");
+    map.insert("type".to_owned(), "IP".to_owned());
 
     let send_buf = serde_json::to_vec(&map).unwrap();
     let addr = ipadd::Conf::remote_server();
     let len = sock.send_to(&send_buf, addr).await.unwrap();
     println!("{:?} bytes sent", len);
 
+
+    let mut buf = BytesMut::with_capacity(1024);
+    
+
+
     let mut recv_buf = [0; 1024];
+
     let (len, addr) = sock.recv_from(&mut recv_buf).await.unwrap();
     println!("{:?} bytes received from {:?}", len, addr);
     let obj:HashMap<String,String> = serde_json::from_slice(&recv_buf[..len]).unwrap();
