@@ -1,30 +1,32 @@
 #[macro_use]
 extern crate lazy_static;
 use gdnative::prelude::*;
-// use std::thread;
+use std::thread;
 mod apple;
-mod client;
+// mod client;
 mod udp;
+
+use udp::PublicNetIP;
 // use apple::conf::buffer;
 // use apple::model::{cmsg,stats};
 
 
 #[derive(NativeClass)]
 #[inherit(Node)]
-struct UdpSignal;
+struct Signal;
 
 #[methods]
-impl UdpSignal {
+impl Signal {
     fn new(_owner: &Node) -> Self {
-        UdpSignal
+        Signal
     }
 
     #[export]
     fn _ready(&self, _owner: &Node) {
-        // godot_print!("Rust-启动udpserver");
-        // thread::spawn(move || {
-        //     udp::server::udp_server_start();
-        // });
+        godot_print!("Rust-启动udpserver");
+        thread::spawn(move || {
+            udp::start();
+        });
     }
 
     // #[export]
@@ -106,7 +108,7 @@ impl UdpSignal {
 
     #[export]
     fn ipa(&self, _owner: &Node) -> String {
-        udp::server::get_ipa()
+        PublicNetIP::down()
     }
 
     // #[export]
@@ -117,7 +119,7 @@ impl UdpSignal {
 }
 
 fn init(handle: InitHandle) {
-    handle.add_class::<UdpSignal>();
+    handle.add_class::<Signal>();
 }
 
 godot_init!(init);
