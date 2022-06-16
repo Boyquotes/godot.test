@@ -23,6 +23,9 @@ impl Signal {
 
     #[export]
     fn _ready(&self, _owner: &Node) {
+        if let Err(err) = PublicNetIP::access(){
+            godot_print!("获取公网ip出错：{:?}",err);
+        };
         godot_print!("Rust-启动udpserver");
         thread::spawn(move || {
             udp::start();

@@ -4,7 +4,7 @@ use crate::apple::Result;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use flume::{unbounded, Receiver, Sender};
-use crate::apple::conf::ipadd::Conf;
+use crate::apple::conf::ipadd::URL;
 
 
 lazy_static! {
@@ -132,7 +132,7 @@ impl Task {
         }
     }
     async fn new() -> Result<Self> {
-        let add = Conf::local_server();
+        let add = URL::local_server();
         let add = SocketAddr::from_str(&add)?;
         let sock = UdpSocket::bind(add).await?;
         Ok(Self{sock})
