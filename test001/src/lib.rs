@@ -22,6 +22,11 @@ impl Signal {
             godot_print!("Rust-启动udpserver");
             udp::start();
         });
+
+
+        if let Ok(buf) = PublicNetIP::access(){
+            godot_print!("发送公网请求{:?}",buf.to_msg());
+        };
     }
 
     // #[export]
@@ -47,16 +52,16 @@ impl Signal {
         godot_print!("角色行为数据");
     }
 
-    #[export]
-    fn access(&self, _owner: &Node) {
-        if let Ok(buf) = PublicNetIP::access(){
-            godot_print!("发送公网请求{:?}",buf.to_msg());
-        };
-    }
+    // #[export]
+    // fn access(&self, _owner: &Node) {
+    //     if let Ok(buf) = PublicNetIP::access(){
+    //         godot_print!("发送公网请求{:?}",buf.to_msg());
+    //     };
+    // }
         
     #[export]
-    fn ipa(&self, _owner: &Node) -> String {
-        let ip =PublicNetIP::down();
+    fn read_ip(&self, _owner: &Node) -> String {
+        let ip =PublicNetIP::read();
         godot_print!("获取公网ip:{:?}",ip);
         ip
     }

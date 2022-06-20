@@ -21,18 +21,17 @@ pub struct PublicNetIP{
     port:u16
 }
 impl PublicNetIP {
-    pub fn down()->String{
+    pub fn read()->String{
         IP.read().to_string()
     }
 
-    pub fn upload(&self){
+    pub fn write(&self){
         let mut ipal = IP.write();
         *ipal = format!("{}:{}",self.ip,self.port);
         godot_print!("更新新的IP:{}",ipal);
     }
 
     pub fn access() -> Result<Buf> {
-        
         let url = ipadd::URL::remote_server();
         let add = SocketAddr::from_str(&url)?;
         let msg = Msg::new(add.ip().to_string(),add.port(),"IP".to_owned());
