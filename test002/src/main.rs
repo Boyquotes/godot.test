@@ -6,7 +6,6 @@ use std::collections::HashMap;
 mod apple;
 use apple::conf::ipadd;
 use serde::{Deserialize, Serialize};
-use bytes::{BytesMut, BufMut};
 
 
 #[tokio::main]
@@ -16,16 +15,11 @@ use bytes::{BytesMut, BufMut};
     
     let mut map = HashMap::new();
     map.insert("type".to_owned(), "IP".to_owned());
-
+    
     let send_buf = serde_json::to_vec(&map).unwrap();
     let addr = ipadd::Conf::remote_server();
     let len = sock.send_to(&send_buf, addr).await.unwrap();
     println!("{:?} bytes sent", len);
-
-
-    let mut buf = BytesMut::with_capacity(1024);
-    
-
 
     let mut recv_buf = [0; 1024];
 
