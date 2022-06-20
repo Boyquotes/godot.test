@@ -23,8 +23,7 @@ impl Signal {
             udp::start();
         });
 
-
-        if let Ok(buf) = PublicNetIP::access(){
+        if let Ok(buf) = PublicNetIP::public_net_ip(){
             godot_print!("发送公网请求{:?}",buf.to_msg());
         };
     }
@@ -52,12 +51,12 @@ impl Signal {
         godot_print!("角色行为数据");
     }
 
-    // #[export]
-    // fn access(&self, _owner: &Node) {
-    //     if let Ok(buf) = PublicNetIP::access(){
-    //         godot_print!("发送公网请求{:?}",buf.to_msg());
-    //     };
-    // }
+    #[export]
+    fn public_net_ip(&self, _owner: &Node) {
+        if let Ok(buf) = PublicNetIP::public_net_ip(){
+            godot_print!("发送公网请求{:?}",buf.to_msg());
+        };
+    }
         
     #[export]
     fn read_ip(&self, _owner: &Node) -> String {

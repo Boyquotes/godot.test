@@ -9,14 +9,6 @@ lazy_static! {
 }
 
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
-pub enum Types {
-    IP,
-    ROOM,
-    STATS,
-    ACTION,
-    NULL
-}
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Msg {
     ip:String,
@@ -38,11 +30,9 @@ impl Msg {
         let bytes =  serde_json::to_vec(&self.data)?;
         Ok(Buf{ip:self.ip.clone(),port:self.port,bytes})
     }
-    pub fn get_type(&self) -> Result<Types> {
-        let unk = String::from("NULL");
-        let type1 = self.data.get("type").unwrap_or(&unk);
-        let b:Types = serde_json::from_str(type1)?;
-        Ok(b)   
+    pub fn get_type(&self) -> Option<String> {
+        let type1 = self.data.get("type")?.to_owned();
+        Some(type1)
     }
     pub fn get_object<'a, T>(&'a self) -> Result<T> 
     where

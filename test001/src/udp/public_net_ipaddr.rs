@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use super::{Msg,ChannelS,Buf};
 use std::{net::SocketAddr, sync::Arc, str::FromStr};
 use crate::apple::Result;
-use crate::godot_print;
 
 
 
@@ -28,10 +27,9 @@ impl PublicNetIP {
     pub fn write(&self){
         let mut ipal = IP.write();
         *ipal = format!("{}:{}",self.ip,self.port);
-        godot_print!("更新新的IP:{}",ipal);
     }
 
-    pub fn access() -> Result<Buf> {
+    pub fn public_net_ip() -> Result<Buf> {
         let url = ipadd::URL::remote_server();
         let add = SocketAddr::from_str(&url)?;
         let msg = Msg::new(add.ip().to_string(),add.port(),"IP".to_owned());
