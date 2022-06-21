@@ -4,8 +4,7 @@ use gdnative::prelude::*;
 use std::thread;
 mod apple;
 mod udp;
-use udp::PublicNetIP;
-use udp::RoomIP;
+use udp::{PublicNetIP,RoomIP,PlayerNetIP};
 
 #[derive(NativeClass)]
 #[inherit(Node)]
@@ -69,6 +68,12 @@ impl Signal {
         } else {
             None
         }
+    }
+
+    #[export]
+    fn read_ip_list(&self, _owner: &Node) -> Vec<String> {     
+        let rst = PlayerNetIP::get_list_to_string();
+        rst
     }
 }
 

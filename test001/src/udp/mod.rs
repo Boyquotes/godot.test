@@ -6,7 +6,7 @@ mod public_net_ipaddr;
 mod player_net_ipaddr;
 pub use receive_and_send::Task;
 pub use public_net_ipaddr::PublicNetIP;
-pub use player_net_ipaddr::RoomIP;
+pub use player_net_ipaddr::{RoomIP,PlayerNetIP};
 use tokio::time::{sleep, Duration};
 use crate::godot_print;
 

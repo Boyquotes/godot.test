@@ -28,8 +28,8 @@ pub struct PublicNetIP{
 
 impl PublicNetIP {
     pub fn new(ip: String, port: u16) -> Self { Self { ip, port } }
-    // 访问外网服务，得到公网地址
     
+    // 访问外网服务，得到公网地址
     pub fn public_net_ip() -> Result<Msg> {
         let url = ipadd::URL::remote_server();
         let ipa = SocketAddr::from_str(&url)?;

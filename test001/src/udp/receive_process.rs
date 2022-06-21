@@ -1,6 +1,7 @@
+use crate::apple::Result;
 use super::{ChannelR,Msg};
 use super::public_net_ipaddr::PublicNetIP;
-use crate::apple::Result;
+use super::player_net_ipaddr::PlayerNetIP;
 
 
 pub struct Task;
@@ -13,11 +14,12 @@ impl Task {
         if let Some(tp) = msg.get_type(){
             match &tp as &str {
                 "IP-RSP" => {
-                    let ip = msg.get_object::<PublicNetIP>().unwrap();
+                    let ip:PublicNetIP = msg.get_object().unwrap();
                     ip.write();
                 },
                 "ROOM-NEW" => {
-                    
+                    let ip_list:Vec<PlayerNetIP> = msg.get_object().unwrap();
+                    PlayerNetIP::set_list(ip_list)
                 }
                 "ACTION-NEW" => {
                     
