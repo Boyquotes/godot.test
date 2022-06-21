@@ -14,5 +14,11 @@ impl URL {
         format!("{}:{}", host, port)
     }
 
+    pub fn local_host() -> String {
+        let host = "127.0.0.1";
+        let port = 5016;
+        format!("{}:{}", host, port)
+    }
+
 
 }

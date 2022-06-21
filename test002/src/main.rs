@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 
     
     let mut map = HashMap::new();
-    map.insert("type".to_owned(), "IP".to_owned());
+    map.insert("type".to_owned(), "IP-ASK".to_owned());
     
     let send_buf = serde_json::to_vec(&map).unwrap();
     let addr = ipadd::Conf::remote_server();

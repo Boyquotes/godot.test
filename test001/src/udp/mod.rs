@@ -1,10 +1,12 @@
-mod channel;
-pub use channel::{ChannelR,ChannelS,Buf,Msg};
+mod queue;
+pub use queue::{ChannelR,ChannelS,Buf,Msg};
 mod receive_process;
 mod receive_and_send;
 mod public_net_ipaddr;
+mod player_net_ipaddr;
 pub use receive_and_send::Task;
 pub use public_net_ipaddr::PublicNetIP;
+pub use player_net_ipaddr::RoomIP;
 use tokio::time::{sleep, Duration};
 use crate::godot_print;
 

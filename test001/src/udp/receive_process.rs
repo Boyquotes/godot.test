@@ -12,14 +12,14 @@ impl Task {
 
         if let Some(tp) = msg.get_type(){
             match &tp as &str {
-                "IP" => {
+                "IP-RSP" => {
                     let ip = msg.get_object::<PublicNetIP>().unwrap();
                     ip.write();
                 },
-                "ROOM" => {
+                "ROOM-NEW" => {
                     
                 }
-                "ACTION" => {
+                "ACTION-NEW" => {
                     
                 }
                 _ => (),

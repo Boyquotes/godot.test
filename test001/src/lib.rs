@@ -5,6 +5,7 @@ use std::thread;
 mod apple;
 mod udp;
 use udp::PublicNetIP;
+use udp::RoomIP;
 
 #[derive(NativeClass)]
 #[inherit(Node)]
@@ -23,16 +24,26 @@ impl Signal {
             udp::start();
         });
 
-        if let Ok(buf) = PublicNetIP::public_net_ip(){
-            godot_print!("发送公网请求{:?}",buf.to_msg());
+        if let Ok(msg) = PublicNetIP::public_net_ip(){
+            godot_print!("发送IP-ASK:{:?}",msg);
         };
     }
 
-    // #[export]
-    // fn login(&self, _owner: &Node, account: String, password: String) {
-    //     let usr = client::user::LoginUser{account, password};
-    //     usr.login();
-    // }
+    #[export]
+    fn join_room(&self, _owner: &Node) -> bool {
+        if let Some(ipa) = PublicNetIP::read(){
+            let key = 0;
+            let ip = ipa.ip;
+            let port = ipa.port;
+            let room =RoomIP::new(key,ip,port);
+            godot_print!("加入房间：{:?}",room);
+            room.join();
+            true
+        }else{
+            godot_print!("加入房间失败...");
+            false
+        }
+    }
 
     #[export]
     fn get_stats(&self, _owner: &Node) {
@@ -50,21 +61,15 @@ impl Signal {
     fn udp_receive_action(&self, _owner: &Node) {
         godot_print!("角色行为数据");
     }
-
-    #[export]
-    fn public_net_ip(&self, _owner: &Node) {
-        if let Ok(buf) = PublicNetIP::public_net_ip(){
-            godot_print!("发送公网请求{:?}",buf.to_msg());
-        };
-    }
         
     #[export]
-    fn read_ip(&self, _owner: &Node) -> String {
-        let ip =PublicNetIP::read();
-        godot_print!("获取公网ip:{:?}",ip);
-        ip
+    fn read_ip(&self, _owner: &Node) -> Option<String> {     
+        if let Some(rst) = PublicNetIP::read() {
+            Some(rst.to_string())
+        } else {
+            None
+        }
     }
-
 }
 
 fn init(handle: InitHandle) {

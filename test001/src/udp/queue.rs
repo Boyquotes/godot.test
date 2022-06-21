@@ -62,6 +62,7 @@ impl Buf {
     pub fn get_target(&self) -> String {
         format!("{}:{}",self.ip,self.port)
     }
+    
 }
 
 
