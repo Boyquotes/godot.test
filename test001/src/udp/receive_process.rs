@@ -2,6 +2,7 @@ use crate::apple::Result;
 use super::{ChannelR,Msg};
 use super::public_net_ipaddr::PublicNetIP;
 use super::player_net_ipaddr::PlayerNetIP;
+use super::player_action_new::{PlayerAction,ActionQ};
 
 
 pub struct Task;
@@ -22,7 +23,8 @@ impl Task {
                     PlayerNetIP::set_list(ip_list)
                 }
                 "ACTION-NEW" => {
-                    
+                    let a:PlayerAction = msg.get_object().unwrap();
+                    ActionQ::set().send_async(a).await.unwrap();
                 }
                 _ => (),
             }

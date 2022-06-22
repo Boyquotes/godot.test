@@ -19,8 +19,8 @@ lazy_static! {
 
 #[derive(Debug, Serialize, Deserialize,Clone)]
 pub struct PlayerNetIP{
-    ip:String,
-    port:u16
+    pub ip:String,
+    pub port:u16
 }
 
 

@@ -1,14 +1,17 @@
 mod queue;
+use tokio::time::{sleep, Duration};
+use crate::godot_print;
 pub use queue::{ChannelR,ChannelS,Buf,Msg};
 mod receive_process;
 mod receive_and_send;
 mod public_net_ipaddr;
 mod player_net_ipaddr;
+mod player_action_new;
 pub use receive_and_send::Task;
 pub use public_net_ipaddr::PublicNetIP;
 pub use player_net_ipaddr::{RoomIP,PlayerNetIP};
-use tokio::time::{sleep, Duration};
-use crate::godot_print;
+pub use player_action_new::PlayerAction;
+
 
 
 #[tokio::main]
@@ -37,10 +40,10 @@ pub async fn start() {
     });
 
     loop{
-        sleep(Duration::from_secs(1)).await;
+        sleep(Duration::from_secs(2)).await;
         let len1 = ChannelS::get().len();
         godot_print!("当前待发送数据为：{:?}",len1);
-        sleep(Duration::from_secs(1)).await;
+        sleep(Duration::from_secs(2)).await;
         let len2 = ChannelR::get().len();
         godot_print!("当前待处理数据为：{:?}",len2);
     }

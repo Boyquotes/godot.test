@@ -4,7 +4,7 @@ use gdnative::prelude::*;
 use std::thread;
 mod apple;
 mod udp;
-use udp::{PublicNetIP,RoomIP,PlayerNetIP};
+use udp::{PublicNetIP,RoomIP,PlayerNetIP,PlayerAction};
 
 #[derive(NativeClass)]
 #[inherit(Node)]
@@ -57,8 +57,15 @@ impl Signal {
     }
 
     #[export]
-    fn udp_receive_action(&self, _owner: &Node) {
-        godot_print!("角色行为数据");
+    fn recv_action(&self, _owner: &Node) {
+        PlayerAction::recv();
+    }
+
+    #[export]
+    fn send_action(&self, _owner: &Node) {
+        godot_print!("发送角色行为数据");
+        let testac = PlayerAction::test();
+        testac.send()
     }
         
     #[export]
@@ -75,6 +82,8 @@ impl Signal {
         let rst = PlayerNetIP::get_list_to_string();
         rst
     }
+
+
 }
 
 fn init(handle: InitHandle) {

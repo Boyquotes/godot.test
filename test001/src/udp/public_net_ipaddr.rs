@@ -9,12 +9,6 @@ use crate::apple::Result;
 
 lazy_static! {
     static ref IP:Arc<RwLock<Option<PublicNetIP>>> = {
-        // let ipadd = ipadd::URL::local_host();
-        // let ipadd = SocketAddr::from_str(&ipadd).unwrap();
-        // let ip = ipadd.ip().to_string();
-        // let port = ipadd.port();
-        // let public_net_ip = PublicNetIP::new(ip,port);
-        // Arc::new(RwLock::new(public_net_ip))
         Arc::new(RwLock::new(None))
     };
 }
@@ -27,7 +21,6 @@ pub struct PublicNetIP{
 }
 
 impl PublicNetIP {
-    pub fn new(ip: String, port: u16) -> Self { Self { ip, port } }
     
     // 访问外网服务，得到公网地址
     pub fn public_net_ip() -> Result<Msg> {
