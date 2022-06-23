@@ -33,7 +33,6 @@ impl PublicNetIP {
     }
 
     pub fn read()-> Option<PublicNetIP> {
-        let _rst = Self::public_net_ip();
         let ipa = IP.read();
         if let Some(rst) = ipa.as_ref() {
             let ip = rst.ip.clone();

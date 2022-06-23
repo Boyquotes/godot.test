@@ -3,6 +3,7 @@ use super::queue::{Msg,ChannelS};
 use super::player_net_ipaddr::PlayerNetIP;
 use flume::{unbounded, Receiver, Sender};
 use crate::godot_print;
+// use serde_json::Value;
 
 lazy_static! {
     static ref ACTRCDE:(Sender<PlayerAction>,Receiver<PlayerAction>) = unbounded();
@@ -41,12 +42,17 @@ impl PlayerAction {
         Self { status, position, speed, back, hp, mp, atn, int } 
     }
 
-    pub fn recv(){
+    pub fn recv()-> Option<String>{
         let recv = ActionQ::get();
         if !recv.is_empty(){
             let act = ActionQ::get().recv().unwrap();
-            godot_print!("接收到角色行为数据{:?}",act);
-        }
+            
+            let serialized = serde_json::to_string(&act).unwrap();
+
+            godot_print!("接收到角色行为数据{:?}",serialized);
+            return Some(serialized)
+        };
+        None
     }
 
     pub fn test() -> Self
