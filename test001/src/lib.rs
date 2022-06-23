@@ -3,8 +3,9 @@ extern crate lazy_static;
 use gdnative::prelude::*;
 mod apple;
 mod udp;
-use udp::{PublicNetIP,RoomIP,PlayerNetIP,PlayerAction};
+use serde_json::Value;
 use std::{thread, time};
+use udp::{PlayerNetIP, PublicNetIP, RoomIP, ACT};
 
 #[derive(NativeClass)]
 #[inherit(Node)]
@@ -25,36 +26,33 @@ impl Signal {
     }
 
     #[export]
-    fn public_net_ip_ask(&self, _owner: &Node)-> String{
+    fn public_net_ip_ask(&self, _owner: &Node) -> String {
         let mut n = 1;
-        loop{
-
-            if let Ok(msg) = PublicNetIP::public_net_ip(){
-                godot_print!("第{}次发送IP-ASK:{:?}...",&n,msg);
+        loop {
+            if let Ok(msg) = PublicNetIP::public_net_ip() {
+                godot_print!("第{}次发送IP-ASK:{:?}...", &n, msg);
                 n = n + 1;
             }
             let ten_millis = time::Duration::from_millis(1000);
             thread::sleep(ten_millis);
-            if let Some(ip) = PublicNetIP::read(){
-                break ip.to_string()
+            if let Some(ip) = PublicNetIP::read() {
+                break ip.to_string();
             }
         }
     }
 
-
     #[export]
     fn player_join_room(&self, _owner: &Node) -> bool {
-        if let Some(ipa) = PublicNetIP::read(){
+        if let Some(ipa) = PublicNetIP::read() {
             let key = 0;
             let ip = ipa.ip;
             let port = ipa.port;
-            let room =RoomIP::new(key,ip,port);
+            let room = RoomIP::new(key, ip, port);
             room.join();
-            godot_print!("玩家加入房间：{:?}",room);
+            godot_print!("玩家进入房间：{:?}", room);
             true
-
-        }else{
-            godot_print!("加入房间失败...");
+        } else {
+            godot_print!("未获得公网IP，进入房间失败...");
             false
         }
     }
@@ -62,29 +60,28 @@ impl Signal {
     #[export]
     fn get_stats(&self, _owner: &Node) {
         godot_print!("这里是角色属性");
-
     }
 
     #[export]
     fn set_stats(&self, _owner: &Node) {
         godot_print!("这里是角色属性");
-
     }
 
     #[export]
     fn recv_action(&self, _owner: &Node) -> Option<String> {
-        PlayerAction::recv()
+        ACT::recv()
     }
 
     #[export]
-    fn send_player_action(&self, _owner: &Node) {
-        godot_print!("发送角色行为数据");
-        let test = PlayerAction::test();
-        test.send()
+    fn send_player_action(&self, _owner: &Node, jstr: String) {
+        if let Ok(rst) = serde_json::from_str::<Value>(&jstr) {
+            let obj = ACT::new(rst);
+            obj.send();
+        };
     }
-        
+
     #[export]
-    fn test_read_ip(&self, _owner: &Node) -> Option<String> {     
+    fn test_read_ip(&self, _owner: &Node) -> Option<String> {
         if let Some(rst) = PublicNetIP::read() {
             Some(rst.to_string())
         } else {
@@ -93,16 +90,12 @@ impl Signal {
     }
 
     #[export]
-    fn test_read_ip_list(&self, _owner: &Node) -> Vec<String> {     
-        let rst = PlayerNetIP::get_list_to_string();
-        rst
+    fn test_read_ip_list(&self, _owner: &Node) -> Vec<String> {
+        PlayerNetIP::get_list_to_string()
     }
-
-
 }
 
 fn init(handle: InitHandle) {
     handle.add_class::<Signal>();
 }
-
 godot_init!(init);

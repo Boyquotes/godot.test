@@ -1,18 +1,16 @@
-mod queue;
-use tokio::time::{sleep, Duration};
+use crate::apple::queue;
 use crate::godot_print;
-pub use queue::{ChannelR,ChannelS,Buf,Msg};
-mod receive_process;
-mod receive_and_send;
-mod public_net_ipaddr;
-mod player_net_ipaddr;
+pub use queue::{Buf, ChannelR, ChannelS, Msg};
+use tokio::time::{sleep, Duration};
 mod player_action_new;
-pub use receive_and_send::Task;
+mod player_net_ipaddr;
+mod public_net_ipaddr;
+mod receive_and_send;
+mod receive_process;
+pub use player_action_new::ACT;
+pub use player_net_ipaddr::{PlayerNetIP, RoomIP};
 pub use public_net_ipaddr::PublicNetIP;
-pub use player_net_ipaddr::{RoomIP,PlayerNetIP};
-pub use player_action_new::PlayerAction;
-
-
+pub use receive_and_send::Task;
 
 #[tokio::main]
 pub async fn start() {
@@ -28,23 +26,23 @@ pub async fn start() {
     // 接收数据
     tokio::spawn(async move {
         while let Ok(msg) = task2.udp_accept().await {
-            godot_print!("接收当前数据:{:?}",msg);
+            godot_print!("接收当前数据:{:?}", msg);
         }
     });
 
     // 处理数据
     tokio::spawn(async move {
         while let Ok(msg) = receive_process::Task::begin().await {
-            godot_print!("处理当前数据:{:?}",msg);
+            godot_print!("处理当前数据:{:?}", msg);
         }
     });
 
-    loop{
+    loop {
         sleep(Duration::from_secs(2)).await;
         let len1 = ChannelS::get().len();
-        godot_print!("当前待发送数据为：{:?}",len1);
+        godot_print!("当前待发送数据为：{:?}", len1);
         sleep(Duration::from_secs(2)).await;
         let len2 = ChannelR::get().len();
-        godot_print!("当前待处理数据为：{:?}",len2);
+        godot_print!("当前待处理数据为：{:?}", len2);
     }
 }

@@ -1,106 +1,68 @@
-use serde::{Deserialize, Serialize};
-use super::queue::{Msg,ChannelS};
 use super::player_net_ipaddr::PlayerNetIP;
+use super::{ChannelS, Msg};
 use flume::{unbounded, Receiver, Sender};
-use crate::godot_print;
-// use serde_json::Value;
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 
 lazy_static! {
-    static ref ACTRCDE:(Sender<PlayerAction>,Receiver<PlayerAction>) = unbounded();
+    static ref ACTRCDE: (Sender<ACT>, Receiver<ACT>) = unbounded();
 }
-
 
 /**
  * 用户行为接收通道
  */
 pub struct ActionQ;
 impl ActionQ {
-    pub fn set()->Sender<PlayerAction>{
+    pub fn set() -> Sender<ACT> {
         ACTRCDE.0.clone()
     }
-    pub fn get()->Receiver<PlayerAction>{
+    pub fn get() -> Receiver<ACT> {
         ACTRCDE.1.clone()
     }
 }
 
-
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct PlayerAction {
-    status: u8,
-    position: [f64; 2],
-    speed: [f64; 2],
-    back: [f64; 2],
-    hp: i32,
-    mp: i32,
-    atn: i32,
-    int: i32,
+pub struct ACT {
+    data: Value,
 }
-
-impl PlayerAction {
-    pub fn new(status: u8, position:[f64; 2] , speed: [f64; 2], back: [f64; 2], hp: i32, mp: i32, atn: i32, int: i32) -> Self
-    { 
-        Self { status, position, speed, back, hp, mp, atn, int } 
+impl ACT {
+    pub fn new(data: Value) -> Self {
+        Self { data }
     }
 
-    pub fn recv()-> Option<String>{
+    pub fn recv() -> Option<String> {
         let recv = ActionQ::get();
-        if !recv.is_empty(){
-            let act = ActionQ::get().recv().unwrap();
-            
-            let serialized = serde_json::to_string(&act).unwrap();
-
-            godot_print!("接收到角色行为数据{:?}",serialized);
-            return Some(serialized)
+        if !recv.is_empty() {
+            let data = ActionQ::get().recv().unwrap();
+            let jstr = serde_json::to_string(&data).unwrap();
+            return Some(jstr);
         };
         None
     }
 
-    pub fn test() -> Self
-    { 
-        let status = 0;
-        let position = [0.0,1.0];
-        let speed=[0.0,1.0];
-        let back=[0.0,1.0];
-        let hp=10;
-        let mp=1;
-        let atn=1;
-        let int=0;
-        Self { status, position, speed, back, hp, mp, atn, int } 
-    }
-
-    pub fn send(&self){
-        let a = PlayerNetIP::get_list();
-        for i in a{
+    pub fn send(&self) {
+        for i in PlayerNetIP::get_list() {
             let type1 = "ACTION-NEW".to_owned();
-            let mut msg = Msg::new(i.ip,i.port,type1);
+            let mut msg = Msg::new(i.ip, i.port, type1);
             msg.set_object(self).unwrap();
             let buf = msg.to_buf().unwrap();
-            ChannelS::set().send(buf).unwrap();  
+            ChannelS::set().send(buf).unwrap();
         }
     }
 
+    pub fn _test() -> Self {
+        let data = json!({
+            "Class": "Player",
+            "Name": "玩家名称",
+            "Status":0,
+            "Position": (0.0,0.0),
+            "Speed": (0.0,0.0),
+            "Back":(0.0,0.0),
+            "HP":10,
+            "MP": 0,
+            "ATN": 1,
+            "INT":0,
+        });
+        Self { data }
+    }
 }
-
-// "action" : {
-//     "Class" : "Player",
-//     "Name" : "玩家1",
-//     "Status" : 0,
-//     "Position" : {
-//         "x" : 0,
-//         "y" : 0
-//     },
-//     "Speed" : {
-//         "x" : 0,
-//         "y" : 0
-//     },
-//     "Back" : {
-//         "x" : 0,
-//         "y" : 0
-//     },
-//     "HP" : 10,
-//     "MP" : 0,
-//     "ATN" : 1,
-//     "INT" : 0
-// },
-
-

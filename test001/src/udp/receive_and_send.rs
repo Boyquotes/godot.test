@@ -1,10 +1,8 @@
-use tokio::net::UdpSocket;
-use std::{net::SocketAddr, sync::Arc, str::FromStr};
-use crate::apple::Result;
+use super::{Buf, ChannelR, ChannelS, Msg};
 use crate::apple::conf::ipadd::URL;
-use super::{ChannelS,ChannelR,Buf, Msg};
-
-
+use crate::apple::Result;
+use std::{net::SocketAddr, str::FromStr, sync::Arc};
+use tokio::net::UdpSocket;
 
 /**UdpServer
  * UDP发送和接收服务
@@ -14,21 +12,24 @@ use super::{ChannelS,ChannelR,Buf, Msg};
  * fn udp_accept(&self) 从socket接收数据，转存数据RQueue队列通道
  */
 #[derive(Debug, Clone)]
-pub struct Task{
+pub struct Task {
     sock: Arc<UdpSocket>,
 }
 impl Task {
-
     pub async fn new() -> Result<Self> {
         let add = URL::local_server();
         let add = SocketAddr::from_str(&add)?;
         let sock = UdpSocket::bind(add).await?;
-        Ok(Self{sock:Arc::new(sock)})
+        Ok(Self {
+            sock: Arc::new(sock),
+        })
     }
 
     pub async fn udp_sender(&self) -> Result<Msg> {
         let send_buf = ChannelS::get().recv_async().await?;
-        self.sock.send_to(&send_buf.bytes, send_buf.get_target()).await?;
+        self.sock
+            .send_to(&send_buf.bytes, send_buf.get_target())
+            .await?;
         Ok(send_buf.to_msg()?)
     }
 
@@ -38,7 +39,7 @@ impl Task {
         let ip = addr.ip().to_string();
         let port = addr.port();
         let bytes = recv_buf[..len].to_vec();
-        let buf = Buf::new(ip,port,bytes);
+        let buf = Buf::new(ip, port, bytes);
         ChannelR::set().send_async(buf.clone()).await?;
         let msg = buf.to_msg()?;
         Ok(msg)
