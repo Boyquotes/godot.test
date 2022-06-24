@@ -20,7 +20,7 @@ impl Signal {
     #[export]
     fn _ready(&self, _owner: &Node) {
         thread::spawn(move || {
-            godot_print!("Rust-启动udpserver");
+            godot_print!("Rust->启动udpserver");
             udp::start();
         });
     }
@@ -30,7 +30,7 @@ impl Signal {
         let mut n = 1;
         loop {
             if let Ok(msg) = PublicNetIP::public_net_ip() {
-                godot_print!("第{}次发送IP-ASK:{:?}...", &n, msg);
+                godot_print!("Rust->第{}次发送IP-ASK:{:?}...", &n, msg);
                 n = n + 1;
             }
             let ten_millis = time::Duration::from_millis(1000);
@@ -49,22 +49,22 @@ impl Signal {
             let port = ipa.port;
             let room = RoomIP::new(key, ip, port);
             room.join();
-            godot_print!("玩家进入房间：{:?}", room);
+            godot_print!("Rust->玩家进入房间：{:?}", room);
             true
         } else {
-            godot_print!("未获得公网IP，进入房间失败...");
+            godot_print!("Rust->未获得公网IP，进入房间失败...");
             false
         }
     }
 
     #[export]
     fn get_stats(&self, _owner: &Node) {
-        godot_print!("这里是角色属性");
+        godot_print!("Rust->这里是角色属性");
     }
 
     #[export]
     fn set_stats(&self, _owner: &Node) {
-        godot_print!("这里是角色属性");
+        godot_print!("Rust->这里是角色属性");
     }
 
     #[export]
