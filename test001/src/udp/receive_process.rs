@@ -1,5 +1,5 @@
-use super::player_action_new::{ActionQ, ACT};
-use super::player_net_ipaddr::PlayerNetIP;
+use super::p2p_value::{P2PQueue, P2PValue};
+use super::player::{NetIP,RoomIP};
 use super::public_net_ipaddr::PublicNetIP;
 use super::{ChannelR, Msg};
 use crate::apple::Result;
@@ -14,16 +14,17 @@ impl Task {
         if let Some(tp) = msg.get_type() {
             match &tp as &str {
                 "IP-RSP" => {
-                    let ip: PublicNetIP = msg.get_object().unwrap();
+                    let ip: PublicNetIP = msg.get_object()?;
                     ip.write();
                 }
-                "ROOM-NEW" => {
-                    let ip_list: Vec<PlayerNetIP> = msg.get_object().unwrap();
-                    PlayerNetIP::set_list(ip_list)
+                "ROOM-RSP" => {
+                    let ip_list: Vec<NetIP> = msg.get_object()?;
+                    let room = RoomIP{ip_list};
+                    room.put_player();
                 }
                 "ACTION-NEW" => {
-                    let action: ACT = msg.get_object().unwrap();
-                    ActionQ::set().send_async(action).await.unwrap();
+                    let value: P2PValue = msg.get_object()?;
+                    P2PQueue::set().send_async(value).await?;
                 }
                 _ => (),
             }

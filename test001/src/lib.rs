@@ -5,7 +5,7 @@ mod apple;
 mod udp;
 use serde_json::Value;
 use std::{thread, time};
-use udp::{PlayerNetIP, PublicNetIP, RoomIP, ACT};
+use udp::{NetIP, PublicNetIP, RoomIP, P2PValue,ChannelS};
 
 #[derive(NativeClass)]
 #[inherit(Node)]
@@ -35,26 +35,21 @@ impl Signal {
             }
             let ten_millis = time::Duration::from_millis(1000);
             thread::sleep(ten_millis);
+
             if let Some(ip) = PublicNetIP::read() {
-                break ip.to_string();
+                return ip.to_string()
             }
         }
     }
 
+
+    // 加入房间
     #[export]
-    fn player_join_room(&self, _owner: &Node) -> bool {
-        if let Some(ipa) = PublicNetIP::read() {
-            let key = 0;
-            let ip = ipa.ip;
-            let port = ipa.port;
-            let room = RoomIP::new(key, ip, port);
-            room.join();
-            godot_print!("Rust->玩家进入房间：{:?}", room);
-            true
-        } else {
-            godot_print!("Rust->未获得公网IP，进入房间失败...");
-            false
-        }
+    fn player_join_room(&self, _owner: &Node,key:String) {
+        if let Ok(msg) = RoomIP::join(key){
+            godot_print!("{:?}",msg);
+        };
+ 
     }
 
     #[export]
@@ -67,17 +62,27 @@ impl Signal {
         godot_print!("Rust->这里是角色属性");
     }
 
+
     #[export]
-    fn recv_action(&self, _owner: &Node) -> Option<String> {
-        ACT::recv()
+    fn p2p_recv(&self, _owner: &Node) -> Option<String> {
+        let value = match P2PValue::recv() {
+            Some(rst)=> rst,
+            None=> {
+                return None;
+            }
+        };
+        value.to_string()
+
     }
 
     #[export]
-    fn send_player_action(&self, _owner: &Node, jstr: String) {
-        if let Ok(rst) = serde_json::from_str::<Value>(&jstr) {
-            let obj = ACT::new(rst);
-            obj.send();
-        };
+    fn p2p_send(&self, _owner: &Node,jstr:String ) {
+        let a = serde_json::from_str::<Value>(&jstr).unwrap();
+
+        let pvalue = P2PValue::new(a);
+     
+       
+        pvalue.send()
     }
 
     #[export]
@@ -91,7 +96,7 @@ impl Signal {
 
     #[export]
     fn test_read_ip_list(&self, _owner: &Node) -> Vec<String> {
-        PlayerNetIP::get_list_to_string()
+        RoomIP::get_player_to_string()
     }
 }
 

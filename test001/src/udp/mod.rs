@@ -2,13 +2,13 @@ use crate::apple::queue;
 use crate::godot_print;
 pub use queue::{Buf, ChannelR, ChannelS, Msg};
 use tokio::time::{sleep, Duration};
-mod player_action_new;
-mod player_net_ipaddr;
+mod p2p_value;
+mod player;
 mod public_net_ipaddr;
 mod receive_and_send;
 mod receive_process;
-pub use player_action_new::ACT;
-pub use player_net_ipaddr::{PlayerNetIP, RoomIP};
+pub use p2p_value::P2PValue;
+pub use player::{NetIP, RoomIP};
 pub use public_net_ipaddr::PublicNetIP;
 pub use receive_and_send::Task;
 
