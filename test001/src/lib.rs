@@ -29,15 +29,22 @@ impl Signal {
     fn public_net_ip_ask(&self, _owner: &Node) -> String {
         let mut n = 1;
         loop {
-            if let Ok(msg) = PublicNetIP::public_net_ip() {
-                godot_print!("Rust->第{}次发送IP-ASK:{:?}...", &n, msg);
-                n = n + 1;
+            match PublicNetIP::public_net_ip() {
+                Ok(msg)=>{
+                    godot_print!("Rust->第{}次发送IP-ASK:{:?}...", &n, msg);
+                }
+                Err(e)=>{
+                    godot_print!("Rust->第{}次发送，错误:{:?}...",&n, e);
+                }  
             }
+            n = n + 1;
             let ten_millis = time::Duration::from_millis(1000);
             thread::sleep(ten_millis);
 
             if let Some(ip) = PublicNetIP::read() {
-                return ip.to_string()
+                break ip.to_string();
+            }else{
+                continue;
             }
         }
     }
@@ -47,7 +54,7 @@ impl Signal {
     #[export]
     fn player_join_room(&self, _owner: &Node,key:String) {
         if let Ok(msg) = RoomIP::join(key){
-            godot_print!("{:?}",msg);
+            godot_print!("Rust->发送加入房间请求{:?}",msg);
         };
  
     }
