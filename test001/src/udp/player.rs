@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 use spin::RwLock;
 use crate::apple::Result;
 use std::{net::SocketAddr, str::FromStr, sync::Arc};
-use super::{ChannelS, Msg, Buf};
-use std::collections::HashMap;
+use super::{ChannelS, Msg};
+
 
 lazy_static! {
     static ref ROOM: Arc<RwLock<RoomIP>> = {
@@ -22,9 +22,9 @@ pub struct NetIP {
     pub port: u16,
 }
 
-impl NetIP {
-    pub fn new(ip: String, port: u16) -> Self { Self { ip, port } }
-}
+// impl NetIP {
+//     pub fn new(ip: String, port: u16) -> Self { Self { ip, port } }
+// }
 
 /**
  * 房间玩家IP列表
