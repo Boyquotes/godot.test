@@ -3,6 +3,8 @@ use super::{ChannelS, Msg};
 use flume::{unbounded, Receiver, Sender};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use crate::apple::Result;
+
 
 lazy_static! {
     static ref P2PQUEUE: (Sender<P2PValue>, Receiver<P2PValue>) = unbounded();
@@ -19,53 +21,64 @@ impl P2PQueue {
     pub fn get() -> Receiver<P2PValue> {
         P2PQUEUE.1.clone()
     }
+
+    pub async fn recv_to_queue(msg:Msg)->Result<()>{
+        let value: P2PValue = msg.get_object()?;
+        Self::set().send_async(value).await?;
+        Ok(())
+    }
+
+    pub fn get_to_value()-> Result<P2PValue>{
+
+        if Self::get().is_empty() {
+            Ok(P2PValue::None)
+        }else{  
+            let a = Self::get().recv()?;
+            Ok(a)
+        }
+    }
+
+
+
+
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct P2PValue {
-    data: Value
+#[derive(Debug, Serialize, Deserialize)]
+pub enum P2PValue {
+    Data(Value),
+    None
+    
 }
 impl P2PValue {
-    pub fn new(data:Value) -> Self {Self {data}}
-
-    pub fn recv() -> Option<Self> {
-        if P2PQueue::get().is_empty() {
-            None
-        }else{  
-            match P2PQueue::get().recv() {
-                Ok(rst)=>Some(rst),
-                Err(err)=>{
-                    println!("{:?}",err);
-                    None
-                }
-            }
-        }
+    pub fn new(data:Value) -> Self {
+        Self::Data(data)
     }
 
-    pub fn to_string(&self)-> Option<String>{
-        match serde_json::to_string(&self.data){
-            Ok(rst)=>Some(rst),
-            Err(err)=>{
-                println!("{:?}",err);
-                None
-            }
+    pub fn to_string(&self)-> Result<Option<String>>{
+        match self {
+            P2PValue::Data(v) => {
+                let a = serde_json::to_string(v)?;
+                return Ok(Some(a))
+            },
+            P2PValue::None => {
+                return Ok(None)
+            },
         }
+        
+        
     }
 
-    pub fn send(&self) {
+    pub fn send_action_new(&self)->Result<()>{
         let type1: String = "ACTION-NEW".to_owned();
         for i in RoomIP::get_player() {
             let mut msg = Msg::new(i.ip, i.port, type1.clone());
-            if let Err(err) = msg.set_object(self){
-                println!("{:?}",err);
-            };
-            if let Ok(buf)= msg.to_buf() {
-                if let Err(err) = ChannelS::set().send(buf){
-                    println!("{:?}",err);
-                }
-            }  
+            msg.set_object(self)?;
+            let buf = msg.to_buf()?;
+            ChannelS::set().send(buf)?;
         }
-    }
+        Ok(())
+    }    
+    
     
     pub fn _test() -> Self {
         let data = json!({
@@ -80,6 +93,6 @@ impl P2PValue {
             "ATN": 1,
             "INT":0,
         });
-        Self {data}
+        Self::Data(data)
     }
 }

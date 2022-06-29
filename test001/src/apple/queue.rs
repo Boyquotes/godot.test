@@ -2,6 +2,7 @@ use crate::apple::Result;
 use flume::{unbounded, Receiver, Sender};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use md5;
 
 lazy_static! {
     static ref SEND_CHANNEL: (Sender<Buf>, Receiver<Buf>) = unbounded();
@@ -11,11 +12,11 @@ lazy_static! {
 /**
  * 数据编辑
  */
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 pub struct Msg {
-    ip: String,
-    port: u16,
-    data: HashMap<String, String>,
+    pub ip: String,
+    pub port: u16,
+    pub data: HashMap<String, String>,
 }
 impl Msg {
     pub fn new(ip: String, port: u16, type1: String) -> Self {
@@ -27,6 +28,11 @@ impl Msg {
             data: map,
         }
     }
+
+    pub fn insert(&mut self,key:String,value:String)->Option<String>{
+        self.data.insert(key, value)
+    }
+
     pub fn set_object<T: Serialize>(&mut self, obj: T) -> Result<()> {
         let object = serde_json::to_string(&obj)?;
         self.data.insert("object".to_owned(), object);
@@ -77,6 +83,11 @@ impl Buf {
     }
     pub fn get_target(&self) -> String {
         format!("{}:{}", self.ip, self.port)
+    }
+
+    pub fn get_md5(&self)-> String {
+        let digest = md5::compute(self.bytes.clone());
+        format!("{:?}",digest)
     }
 }
 

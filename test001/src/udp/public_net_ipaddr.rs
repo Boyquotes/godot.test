@@ -41,8 +41,10 @@ impl PublicNetIP {
         format!("{}:{}", self.ip, self.port)
     }
 
-    pub fn write(self) {
+    pub fn write(msg:Msg)->Result<()> {
+        let ip: PublicNetIP = msg.get_object()?;
         let mut ipal = IP.write();
-        *ipal = Some(self);
+        *ipal = Some(ip);
+        Ok(())
     }
 }

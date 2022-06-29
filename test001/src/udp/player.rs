@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use spin::RwLock;
 use crate::apple::Result;
 use std::{net::SocketAddr, str::FromStr, sync::Arc};
-use super::{ChannelS, Msg};
+use super::{ChannelS, Msg, Buf};
 use std::collections::HashMap;
 
 lazy_static! {
@@ -37,9 +37,8 @@ pub struct RoomIP {
 impl RoomIP {
     pub fn new() -> Self {
         let ip_list = Vec::new();
-        Self { ip_list } 
+        Self {ip_list}
     }
-
 
     pub fn get_player() -> Vec<NetIP> {
         let room = ROOM.read();
@@ -60,15 +59,40 @@ impl RoomIP {
         *ipal = self.clone();
     }
 
-    pub fn join(key:String)-> Result<Msg>{
+    /** 
+     * 加入房间请求
+    */
+    pub fn ask(key:String)-> Result<()>{
         let url = ipadd::URL::remote_server();
         let ipa = SocketAddr::from_str(&url)?;
         let mut msg = Msg::new(ipa.ip().to_string(), ipa.port(), "ROOM-ASK".to_owned());
-        let mut map = HashMap::new();
-        map.insert("ROOM".to_owned(), key);
-        msg.set_object(map)?;
+        msg.insert("ROOM".to_owned(), key);
         let buf = msg.to_buf()?;
         ChannelS::set().send(buf)?;
-        Ok(msg)
+        Ok(())
+    }
+
+    /**
+    * 收到数据并回复
+    * msg 接收到的消息
+    */ 
+    pub fn rsp(msg:Msg)->Result<()>{
+        let ip_list: Vec<NetIP> = msg.get_object()?;
+        let room = Self{ip_list};
+        room.put_player();
+        let buf = msg.to_buf()?;
+        Self::check(&msg.ip,msg.port,buf.get_md5())?;
+        Ok(())
+    }
+
+    /**
+    * 回复确认已收到
+    */ 
+    pub fn check(ip:&String,port:u16,md5:String)->Result<()>{
+        let mut msg = Msg::new(ip.clone(), port, "ROOM-CHK".to_owned());
+        msg.insert("MD5".to_owned(), md5);
+        let buf = msg.to_buf()?;
+        ChannelS::set().send(buf)?;
+        Ok(())
     }
 }
