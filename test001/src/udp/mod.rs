@@ -3,12 +3,14 @@ use crate::godot_print;
 pub use queue::{Buf, ChannelR, ChannelS, Msg};
 use tokio::time::{sleep, Duration};
 mod p2p_value;
-mod player;
+mod room;
 mod public_net_ipaddr;
 mod receive_and_send;
 mod receive_process;
+mod player_net_ipaddr;
+
 pub use p2p_value::{P2PQueue,P2PValue};
-pub use player::{NetIP, RoomIP};
+pub use room::{NetIP, RoomIP};
 pub use public_net_ipaddr::PublicNetIP;
 pub use receive_and_send::Task;
 
@@ -39,10 +41,7 @@ pub async fn start() {
 
     loop {
         sleep(Duration::from_secs(2)).await;
-        let len1 = ChannelS::get().len();
-        godot_print!("Rust->当前待发送数据为：{:?}", len1);
-        sleep(Duration::from_secs(2)).await;
-        let len2 = ChannelR::get().len();
-        godot_print!("Rust->当前待处理数据为：{:?}", len2);
+        
+        godot_print!("Rust->当前玩家：{:?}", RoomIP::get_player());
     }
 }

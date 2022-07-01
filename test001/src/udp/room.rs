@@ -45,15 +45,6 @@ impl RoomIP {
         room.ip_list.clone()
     }
 
-    pub fn get_player_to_string() -> Vec<String> {
-        let mut listr = Vec::<String>::new();
-        let room = ROOM.read();
-        for i in room.ip_list.iter() {
-            listr.push(format!("{}:{}", i.ip, i.port));
-        }
-        listr
-    }
-
     pub fn put_player(&self) {
         let mut ipal = ROOM.write();
         *ipal = self.clone();

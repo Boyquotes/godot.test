@@ -3,9 +3,8 @@ extern crate lazy_static;
 use gdnative::prelude::*;
 mod apple;
 mod udp;
-use serde_json::Value;
 use std::{thread, time};
-use udp::{NetIP, PublicNetIP, RoomIP, P2PQueue,P2PValue,ChannelS};
+use udp::{ PublicNetIP, RoomIP, P2PQueue,P2PValue};
 
 #[derive(NativeClass)]
 #[inherit(Node)]
@@ -70,6 +69,7 @@ impl Signal {
         godot_print!("Rust->这里是角色属性");
     }
 
+
     #[export]
     fn p2p_recv(&self, _owner: &Node) -> Option<String> {
         match P2PQueue::get_to_value(){
@@ -108,19 +108,6 @@ impl Signal {
         
     }
 
-    #[export]
-    fn test_read_ip(&self, _owner: &Node) -> Option<String> {
-        if let Some(rst) = PublicNetIP::read() {
-            Some(rst.to_string())
-        } else {
-            None
-        }
-    }
-
-    #[export]
-    fn test_read_ip_list(&self, _owner: &Node) -> Vec<String> {
-        RoomIP::get_player_to_string()
-    }
 }
 
 fn init(handle: InitHandle) {

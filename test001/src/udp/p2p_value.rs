@@ -1,4 +1,4 @@
-use super::player::RoomIP;
+use super::room::RoomIP;
 use super::{ChannelS, Msg};
 use flume::{unbounded, Receiver, Sender};
 use serde::{Deserialize, Serialize};
@@ -70,6 +70,8 @@ impl P2PValue {
 
     pub fn send_action_new(&self)->Result<()>{
         let type1: String = "ACTION-NEW".to_owned();
+
+        // 这里需要针对对称NAT做更改。IP端口需要通过试探得到映射端口
         for i in RoomIP::get_player() {
             let mut msg = Msg::new(i.ip, i.port, type1.clone());
             msg.set_object(self)?;

@@ -8,7 +8,7 @@ impl URL {
 
     pub fn local_server() -> String {
         let host = "0.0.0.0";
-        let port = 5016;
+        let port = 0;
         format!("{}:{}", host, port)
     }
 }

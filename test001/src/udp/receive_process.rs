@@ -1,5 +1,5 @@
 use super::p2p_value::{P2PQueue};
-use super::player::RoomIP;
+use super::room::RoomIP;
 use super::public_net_ipaddr::PublicNetIP;
 use super::{ChannelR, Msg};
 use crate::apple::Result;
