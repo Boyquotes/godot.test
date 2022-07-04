@@ -74,6 +74,7 @@ impl P2PValue {
         // 这里需要针对对称NAT做更改。IP端口需要通过试探得到映射端口
         for i in RoomIP::get_player() {
             let mut msg = Msg::new(i.ip, i.port, type1.clone());
+            
             msg.set_object(self)?;
             let buf = msg.to_buf()?;
             ChannelS::set().send(buf)?;
