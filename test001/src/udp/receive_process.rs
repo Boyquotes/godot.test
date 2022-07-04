@@ -1,7 +1,7 @@
 use super::p2p_value::{P2PQueue};
 use super::room::RoomIP;
 use super::public_net_ipaddr::PublicNetIP;
-use super::player_net_ipaddr::PlayerNetMapList;
+use super::player_net_ipaddr::IpMapList;
 use super::{ChannelR, Msg};
 use crate::apple::Result;
 
@@ -16,8 +16,8 @@ impl Task {
             match &tp as &str {
                 "IP-RSP" => PublicNetIP::write(msg.clone())?,
                 "ROOM-RSP" => RoomIP::rsp(msg.clone())?,
-                "P2P-RSP" => PlayerNetMapList::rsp(msg.clone())?,
-                "P2P-CHK" => PlayerNetMapList::check2(msg.clone())?,
+                "P2P-RSP" => IpMapList::rsp(msg.clone())?,
+                "P2P-CHK" => IpMapList::check2(msg.clone())?,
                 "ACTION-NEW" => P2PQueue::recv_to_queue(msg.clone()).await?,
                 _ => (),
             }

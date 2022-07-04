@@ -7,11 +7,9 @@ use super::{ChannelS, Msg,RoomIP,NetIP};
 
 
 lazy_static! {
-    static ref PNML: Arc<RwLock<PlayerNetMapList>> = {
-        Arc::new(RwLock::new(PlayerNetMapList::new()))
+    static ref MAP_LIST: Arc<RwLock<IpMapList>> = {
+        Arc::new(RwLock::new(IpMapList::new()))
     };
-
-    // static ref P2PNET: (Sender<PlayerNetMap>, Receiver<PlayerNetMap>) = unbounded();
 }
 
 /**
@@ -31,13 +29,13 @@ pub enum Sign {
  * 网络映射
  */
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PlayerNetMap {
-    pub ipa:NetIP,
+pub struct IpMap {
+    pub ipa: NetIP,
     pub sign: Sign,
     pub offset: i32,
 }
 
-impl PlayerNetMap {
+impl IpMap {
     pub fn new(ipa:NetIP) -> Self { Self { ipa,sign:Sign::Ready, offset:0}}
     
     pub fn to_begin(&self)->Self{
@@ -96,79 +94,123 @@ impl PlayerNetMap {
  * 房间玩家IP列表
  */
 #[derive(Debug, Serialize, Deserialize,Clone)]
-pub struct PlayerNetMapList {
-    pub ip_list: Vec<PlayerNetMap>
+pub struct IpMapList {
+    pub ip_list: Vec<IpMap>
 }
 
-impl PlayerNetMapList {
+impl IpMapList {
     pub fn new() -> Self {
         let ip_list = Vec::new();
         Self {ip_list}
     }
 
-    pub fn get()->Self{
-        let room = PNML.read();
-        Self{ip_list:room.ip_list.clone()}
-    }
-
     pub fn save(&self) {
-        let mut ipal = PNML.write();
+        let mut ipal = MAP_LIST.write();
         *ipal = self.clone();
     }
-    pub fn _del(&self,value:PlayerNetMap){
-        let mut new_list =  PlayerNetMapList::new();
-        for i in Self::get().ip_list {
-            if i.ipa != value.ipa{
-                new_list.ip_list.push(i)
+
+    pub fn clear(){
+        let new_self =  IpMapList::new();
+        Self::save(&new_self);
+    }
+
+    pub fn find_one(ipa:NetIP)->Option<IpMap>{
+        let room = MAP_LIST.read();
+        for i in &room.ip_list{
+            if i.ipa == ipa{
+                return Some(i.clone())
             }
         }
-        Self::save(&new_list);
-        
+        return None
     }
-    pub fn insert(&self,value:PlayerNetMap){
-        let mut new_list =  PlayerNetMapList::new();
 
-        for i in Self::get().ip_list {
+
+    pub fn find()->Self{
+        let ip_map_list = MAP_LIST.read();
+        ip_map_list.clone()
+    }
+
+
+    pub fn update_one(value:IpMap){
+        let mut new_self =  IpMapList::new();
+
+        for i in Self::find().ip_list {
             if i.ipa == value.ipa{
-                new_list.ip_list.push(value.clone())
-
+                new_self.ip_list.push(value.clone())
             }else{
-                new_list.ip_list.push(i)
+                new_self.ip_list.push(i)
             }
         }
-        Self::save(&new_list);
+        Self::save(&new_self);
     }
+
+    pub fn replace_one(value:IpMap){
+        let mut new_self =  IpMapList::new();
+        match Self::find_one(value.ipa.clone()) {
+            Some(_)=>{
+                for i in Self::find().ip_list {
+                    if i.ipa == value.ipa{
+                        new_self.ip_list.push(value.clone())
+                    }else{
+                        new_self.ip_list.push(i)
+                    }
+                }
+            }
+            None=>{
+                for i in Self::find().ip_list {
+                    new_self.ip_list.push(i)
+                }
+                new_self.ip_list.push(value)
+            }
+            
+        }
+        Self::save(&new_self);
+    }
+
+
+    pub fn delete_one(&self,value:IpMap){
+        let mut new_self =  IpMapList::new();
+        for i in Self::find().ip_list {
+            if i.ipa != value.ipa{
+                new_self.ip_list.push(i)
+            }
+        }
+        Self::save(&new_self);
+    }
+    
 
 
     /**
      * IP探测
      */
     pub async fn start()-> Result<()> {
-        let mut p_map_list =  PlayerNetMapList::new();
+        let mut map_list =  IpMapList::new();
 
-        for i in Self::get().ip_list {
+        for i in Self::find().ip_list {
             match i.sign{
                 Sign::Begin=>{
                     let a = i.to_next();
-                    p_map_list.ip_list.push(a.clone());
+                    map_list.ip_list.push(a.clone());
                     
                     let msg = a.to_msg()?;
                     ChannelS::set().send_async(msg.to_buf()?).await?;
                 }
                 Sign::Next=>{
                     let a = i.to_next();
-                    p_map_list.ip_list.push(a.clone());
+                    map_list.ip_list.push(a.clone());
                     let msg = a.to_msg()?;
                     ChannelS::set().send_async(msg.to_buf()?).await?;
                 }
           
                 _=>{
-                    p_map_list.ip_list.push(i.clone())
+                    map_list.ip_list.push(i.clone())
                 }
             }
         }
 
-        Self::save(&p_map_list);
+
+        map_list.save();
+        // Self::save(&map_list);
         
         Ok(())
 
@@ -180,12 +222,12 @@ impl PlayerNetMapList {
     * msg 接收到的消息
     */ 
     pub fn rsp(msg:Msg)->Result<()>{
-        let mut p_map_list =  PlayerNetMapList::new();
-        let map:PlayerNetMap  = msg.get_object()?;
+        let mut p_map_list =  IpMapList::new();
+        let map:IpMap  = msg.get_object()?;
 
         Self::check(msg.ip,msg.port,map.clone())?;
 
-        for i in Self::get().ip_list {
+        for i in Self::find().ip_list {
             if i.ipa == map.ipa{
                 let b = i.to_rigth();
                 p_map_list.ip_list.push(b)
@@ -201,7 +243,7 @@ impl PlayerNetMapList {
     /**
     * 回复确认已收到
     */ 
-    pub fn check(ip:String,port:u16,map:PlayerNetMap)->Result<()>{
+    pub fn check(ip:String,port:u16,map:IpMap)->Result<()>{
         let mut msg = Msg::new(ip.clone(), port, "P2P-CHK".to_owned());
         msg.set_object(map)?;
         let buf = msg.to_buf()?;
@@ -214,10 +256,10 @@ impl PlayerNetMapList {
     * 收到的第三次握手
     */ 
     pub fn check2(msg:Msg)->Result<()>{
-        let mut p_map_list =  PlayerNetMapList::new();
-        let map:PlayerNetMap  = msg.get_object()?;
+        let mut p_map_list =  IpMapList::new();
+        let map:IpMap  = msg.get_object()?;
 
-        for i in Self::get().ip_list {
+        for i in Self::find().ip_list {
             if i.ipa == map.ipa{
                 let b = i.to_rigth();
                 p_map_list.ip_list.push(b)
