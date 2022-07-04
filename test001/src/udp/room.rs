@@ -22,9 +22,16 @@ pub struct NetIP {
     pub port: u16,
 }
 
-// impl NetIP {
-//     pub fn new(ip: String, port: u16) -> Self { Self { ip, port } }
-// }
+impl NetIP {
+    pub fn new(ip: String, port: u16) -> Self { Self { ip, port } }
+}
+
+
+impl PartialEq for NetIP {
+    fn eq(&self, other: &Self) -> bool {
+        self.ip == other.ip && self.port == other.port
+    }
+}
 
 /**
  * 房间玩家IP列表
@@ -45,7 +52,7 @@ impl RoomIP {
         room.ip_list.clone()
     }
 
-    pub fn put_player(&self) {
+    pub fn save(&self) {
         let mut ipal = ROOM.write();
         *ipal = self.clone();
     }
@@ -69,8 +76,13 @@ impl RoomIP {
     */ 
     pub fn rsp(msg:Msg)->Result<()>{
         let ip_list: Vec<NetIP> = msg.get_object()?;
+        
+        
+        
         let room = Self{ip_list};
-        room.put_player();
+        room.save();
+
+
         let buf = msg.to_buf()?;
         Self::check(&msg.ip,msg.port,buf.get_md5())?;
         Ok(())

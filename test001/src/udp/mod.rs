@@ -13,6 +13,7 @@ pub use p2p_value::{P2PQueue,P2PValue};
 pub use room::{NetIP, RoomIP};
 pub use public_net_ipaddr::PublicNetIP;
 pub use receive_and_send::Task;
+pub use player_net_ipaddr::PlayerNetMapList;
 
 #[tokio::main]
 pub async fn start() {
@@ -41,7 +42,9 @@ pub async fn start() {
 
     loop {
         sleep(Duration::from_secs(2)).await;
+
         
         godot_print!("Rust->当前玩家：{:?}", RoomIP::get_player());
+        godot_print!("Rust->玩家映射：{:?}", PlayerNetMapList::get());
     }
 }
