@@ -17,7 +17,7 @@ pub struct PublicNetIP {
 
 impl PublicNetIP {
     // 访问外网服务，得到公网地址
-    pub fn public_net_ip() -> Result<Msg> {
+    pub fn ask() -> Result<Msg> {
         let url = ipadd::URL::remote_server();
         let ipa = SocketAddr::from_str(&url)?;
         let msg = Msg::new(ipa.ip().to_string(), ipa.port(), "IP-ASK".to_owned());

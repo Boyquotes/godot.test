@@ -22,29 +22,23 @@ impl Signal {
             godot_print!("Rust->启动udpserver");
             udp::start();
         });
+
+        let ip = Self::public_net_ip_ask();
+        godot_print!("Rust->当前远程IP地址为：{:?}",ip);
     }
 
-    #[export]
-    fn public_net_ip_ask(&self, _owner: &Node) -> String {
-        let mut n = 1;
-        loop {
-            match PublicNetIP::public_net_ip() {
-                Ok(msg)=>{
-                    godot_print!("Rust->第{}次发送IP-ASK:{:?}...", &n, msg);
+    fn public_net_ip_ask() -> String {
+        loop{
+            if let Ok(msg) = PublicNetIP::ask() {
+                println!("Rust->发送IP-ASK:{:?}...",msg);
+                let ten_millis = time::Duration::from_millis(1000);
+                thread::sleep(ten_millis);
+                if let Some(ip) = PublicNetIP::read() {
+                    println!("Rust->当前远程IP地址为：{:?}",ip);
+                    break ip.to_string();
                 }
-                Err(e)=>{
-                    godot_print!("Rust->第{}次发送，错误:{:?}...",&n, e);
-                }  
             }
-            n = n + 1;
-            let ten_millis = time::Duration::from_millis(1000);
-            thread::sleep(ten_millis);
-
-            if let Some(ip) = PublicNetIP::read() {
-                break ip.to_string();
-            }else{
-                continue;
-            }
+    
         }
     }
 
@@ -53,7 +47,6 @@ impl Signal {
     #[export]
     fn player_join_room(&self, _owner: &Node,key:String) {
         if let Ok(msg) = RoomIP::ask(key){
-
             godot_print!("Rust->发送加入房间请求{:?}",msg);
         };
  
@@ -114,3 +107,26 @@ fn init(handle: InitHandle) {
     handle.add_class::<Signal>();
 }
 godot_init!(init);
+
+
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+
+    #[test]
+    fn it_works() {
+
+
+
+
+        thread::spawn(move || {
+            println!("Rust->启动udpserver");
+            udp::start();
+        });
+
+        let ipstr = Signal::public_net_ip_ask();
+        println!("{:?}",ipstr);
+    }
+}
+

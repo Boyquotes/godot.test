@@ -3,7 +3,9 @@ use serde::{Deserialize, Serialize};
 use spin::RwLock;
 use crate::apple::Result;
 use std::{net::SocketAddr, str::FromStr, sync::Arc};
-use super::{ChannelS, Msg};
+use super::{ChannelS, Msg,IpMap,Cursor,Data,Sign};
+use super::godot_print;
+
 
 
 lazy_static! {
@@ -16,7 +18,7 @@ lazy_static! {
 /** 
  * 公网IP地址
  */
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Eq, Hash, PartialEq, Serialize, Deserialize, Clone)]
 pub struct NetIP {
     pub ip: String,
     pub port: u16,
@@ -26,12 +28,6 @@ impl NetIP {
     pub fn new(ip: String, port: u16) -> Self { Self { ip, port } }
 }
 
-
-impl PartialEq for NetIP {
-    fn eq(&self, other: &Self) -> bool {
-        self.ip == other.ip && self.port == other.port
-    }
-}
 
 /**
  * 房间玩家IP列表
@@ -76,15 +72,17 @@ impl RoomIP {
     */ 
     pub fn rsp(msg:Msg)->Result<()>{
         let ip_list: Vec<NetIP> = msg.get_object()?;
-        
-        
-        
+        // 更新映射表
+        for i in ip_list.clone(){
+            let data = Data::ready(i);
+            Cursor::replace_one(data);
+        }
+
         let room = Self{ip_list};
         room.save();
-
-
         let buf = msg.to_buf()?;
         Self::check(&msg.ip,msg.port,buf.get_md5())?;
+
         Ok(())
     }
 
