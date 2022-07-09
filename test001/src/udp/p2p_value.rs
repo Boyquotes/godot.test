@@ -1,10 +1,9 @@
-use super::room::RoomIP;
 use super::{ChannelS, Msg};
 use flume::{unbounded, Receiver, Sender};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use crate::apple::Result;
-
+use super::{Cursor,Sign};
 
 lazy_static! {
     static ref P2PQUEUE: (Sender<P2PValue>, Receiver<P2PValue>) = unbounded();
@@ -69,16 +68,17 @@ impl P2PValue {
     }
 
     pub fn send_action_new(&self)->Result<()>{
-        let type1: String = "ACTION-NEW".to_owned();
-
-        // 这里需要针对对称NAT做更改。IP端口需要通过试探得到映射端口
-        for i in RoomIP::get_player() {
-            let mut msg = Msg::new(i.ip, i.port, type1.clone());
-            
-            msg.set_object(self)?;
-            let buf = msg.to_buf()?;
-            ChannelS::set().send(buf)?;
+        
+        for (ipa,sign) in Cursor::find().data{
+            let type1: String = "ACTION-NEW".to_owned();
+            if let Sign::Rigth(port)=sign{
+                let mut msg = Msg::new(ipa.ip, port, type1.clone());
+                msg.set_object(self)?;
+                let buf = msg.to_buf()?;
+                ChannelS::set().send(buf)?;
+            }
         }
+
         Ok(())
     }    
     

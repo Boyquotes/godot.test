@@ -4,14 +4,12 @@ pub use queue::{Buf, ChannelR, ChannelS, Msg};
 use tokio::time::{sleep, Duration};
 mod p2p_value;
 mod room;
-mod public_net_ipaddr;
 mod receive_and_send;
 mod receive_process;
 mod p2p_ip_map;
 
 pub use p2p_value::{P2PQueue,P2PValue};
 pub use room::{NetIP, RoomIP};
-pub use public_net_ipaddr::PublicNetIP;
 pub use receive_and_send::Task;
 pub use p2p_ip_map::{IpMap,Cursor,Data,Sign};
 
@@ -45,18 +43,33 @@ pub async fn start() {
     tokio::spawn(async move {
         godot_print!("Rust->启动p2p探测。。。");
         while let Ok(()) = IpMap::start().await {
-            godot_print!("Rust->p2p探测执行");      
+            // godot_print!("Rust->p2p探测执行");
+                
             
+        }
+    });
+
+
+    // room 心跳
+    tokio::spawn(async move {
+        godot_print!("Rust->room 心跳 。。。");
+        loop {
+            if let Some(key) = RoomIP::key_get(){
+                if let Ok(()) = RoomIP::ask(key){
+                    godot_print!("Rust->启动心跳")
+                }
+            }
+            sleep(Duration::from_secs(30)).await;
         }
     });
 
 
 
     loop {
-        godot_print!("Rust->当前玩家：{:?}", RoomIP::get_player());
-        godot_print!("Rust->玩家映射：{:?}", Cursor::find());
-        godot_print!("Rust->当前公网：{:?}", PublicNetIP::read());
+        println!("Rust->当前玩家：{:?}", RoomIP::get_player());
+        println!("Rust->玩家映射：{:?}", Cursor::find());
+
        
-        sleep(Duration::from_secs(5)).await;
+        sleep(Duration::from_secs(2)).await;
     }
 }

@@ -1,9 +1,9 @@
-use crate::apple::conf::ipadd;
+// use crate::apple::conf::ipadd;
 use serde::{Deserialize, Serialize};
-use spin::{RwLock, RwLockWriteGuard};
+// use spin::{RwLock, RwLockWriteGuard};
 use crate::apple::Result;
-use std::{net::SocketAddr, str::FromStr, sync::Arc};
-use super::{ChannelS, Msg,RoomIP,NetIP,PublicNetIP};
+// use std::{net::SocketAddr, str::FromStr, sync::Arc};
+use super::{ChannelS,Buf, Msg,RoomIP,NetIP};
 use tokio::time::{sleep, Duration};
 use crate::godot_print;
 use std::collections::HashMap;
@@ -18,20 +18,18 @@ lazy_static! {
 pub struct Cursor;
 
 impl Cursor {
-    pub fn get(key:NetIP)->Option<Sign>{
+    pub fn _get(key:NetIP)->Option<Sign>{
         let sign = CACHE.get(&key)?;
         Some(sign.to_owned())
     }
     pub fn find()->IpMap{
         let data = CACHE.clone();
-        // let mut data2:HashMap<NetIP, Sign>;
-        // data.clone_into(&mut data2);
         IpMap{data}
     }
     pub fn replace_one(data:Data)->Option<Sign>{
         CACHE.insert(data.ipa,data.sign)
     }
-    pub fn delete_one(key:NetIP)->Option<Sign>{
+    pub fn _delete_one(key:NetIP)->Option<Sign>{
         CACHE.remove(&key)
     }
 }
@@ -89,11 +87,17 @@ impl Data {
         }
     }
     pub fn rigth(&self)->Option<Self>{
-        if let Sign::Next(port) = self.sign{
-            Some(Self{ipa:self.ipa.clone(), sign:Sign::Rigth(port)})
-        }else{None}
+        match self.sign {
+            Sign::Ready =>{
+                Some(Self{ipa:self.ipa.clone(), sign:Sign::Rigth(self.ipa.port)})
+            }
+            Sign::Next(port) =>{
+                Some(Self{ipa:self.ipa.clone(), sign:Sign::Rigth(port)})
+            }
+            _=>None  
+        }
     }
-    pub fn leave(&self)->Option<Self>{
+    pub fn _leave(&self)->Option<Self>{
         if let Sign::Rigth(port) = self.sign{
             Some(Self{ipa:self.ipa.clone(), sign:Sign::Leave(port)})
         }else{None}
@@ -116,7 +120,7 @@ pub struct IpMap {
     pub data: CHashMap<NetIP,Sign>
 }
 impl IpMap {
-    pub fn new() -> Self {
+    pub fn _new() -> Self {
         let data = CHashMap::new();
         Self {data}
     }
@@ -125,40 +129,46 @@ impl IpMap {
      * IP探测
      */
     pub async fn start()-> Result<()> {
-
-
-        
-        
         for (ipa,sign) in Cursor::find().data {
             let data = Data::new(ipa,sign);
-
-            
-
             Self::ask(data).await?;
         }
 
-        
-
-        sleep(Duration::from_secs(10)).await;
+        sleep(Duration::from_millis(1)).await;
         Ok(())
     }
 
     async fn ask_msg(data:Data)->Option<Msg>{
-        let mut map = HashMap::new();
+        let mut dict = HashMap::new();
+        
+        // from消息
+        
 
-        if let Some(ipa) = PublicNetIP::read(){
+        if let Some(ipa) = RoomIP::get_player().myself{
             let ipa = NetIP::new(ipa.ip,ipa.port);
-            let data2 = Data::new(ipa,Sign::Ready);
-            map.insert("from",data2);
-        }
-        map.insert("to",data.clone());
-        let type1: String = "P2P-ASK".to_owned();
-        let ip = data.ipa.ip.clone();
-        if let Sign::Next(port) = data.sign{
-            let mut msg = Msg::new(ip, port, type1.clone());
-            if let Ok(()) = msg.set_object(map){
-                return Some(msg);
-            }
+
+            dict.insert("from",Data::new(ipa,Sign::Ready));
+
+            // to消息
+            dict.insert("to",data.clone());
+
+            match data.sign {
+                Sign::Ready=>{
+                    if let Some(data) = data.next(){
+                        Cursor::replace_one(data);
+                    }
+                }
+                Sign::Next(port)=>{
+                    // msg组装
+                    let type1: String = "P2P-ASK".to_owned();
+                    let mut msg = Msg::new(data.ipa.ip, port, type1.clone());
+                    if let Ok(()) = msg.set_object(dict){
+                        return Some(msg)
+                    }
+                }
+                _=>{}
+            };
+            
         }
         None
     }
@@ -169,34 +179,48 @@ impl IpMap {
             let buf = msg.to_buf()?;
             godot_print!("Rust->本机发送P2P-ASK：{:?}",msg);
             ChannelS::set().send_async(buf).await?;
+
+            if let Some(data2) = data.next(){
+                Cursor::replace_one(data2);
+            }
+            
         }
 
-        if let Some(data2) = data.next(){
-            Cursor::replace_one(data2);
-        }
         Ok(())
     }
 
-    // /**
-    // * 收到数据并回复
-    // * msg 接收到的消息
-    // */ 
-    // pub fn rsp(msg:Msg)->Result<()>{
-    //     let mut map_list =  IpMapList::new();
-    //     let value:IpMap  = msg.get_object()?;
-    //     Self::check(value.clone())?;
-    //     for i in Cursor::find().ip_list {
-    //         if i.ipa == value.ipa{
-    //             let b = i.rigth();
-    //             map_list.ip_list.push(b)
+    /**
+    * 收到数据并回复
+    * msg 接收到的消息
+    */ 
+    pub async fn accept(msg:Msg)->Result<Msg>{
+        let map_object:HashMap<&str,Data>  = msg.get_object()?;
+        let a = map_object.get("from").unwrap();
+        let b = a.rigth().unwrap();
+        Cursor::replace_one(b);
 
-    //         }else{
-    //             map_list.ip_list.push(i.clone())
-    //         }
-    //     }
-    //     Cursor::save(map_list);
-    //     Ok(())
-    // }
+
+        let c = map_object.get("to").unwrap();
+        let mut c = c.clone();
+        c.ipa = RoomIP::get_myself().unwrap();
+
+        let d = c.rigth().unwrap();
+        let mut msg = Msg::new(msg.ip, msg.port, "P2P-RSP".to_owned());
+        msg.set_object(d)?;
+        let buf = msg.to_buf()?;
+        godot_print!("Rust->本机发送P2P-RSP：{:?}",msg);
+        ChannelS::set().send_async(buf).await?;
+
+        Ok(msg)
+    }
+
+    pub fn rsp(msg:Msg)->Result<()>{
+        let data:Data  = msg.get_object()?;
+        godot_print!("Rust->本机收到P2P-RSP DATA：{:?}",data);
+        Cursor::replace_one(data);
+        
+        Ok(())
+    }
 
     // /**
     // * 回复确认已收到

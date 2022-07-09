@@ -1,6 +1,5 @@
 use super::p2p_value::{P2PQueue};
 use super::room::RoomIP;
-use super::public_net_ipaddr::PublicNetIP;
 use super::p2p_ip_map::IpMap;
 use super::{ChannelR, Msg};
 use crate::apple::Result;
@@ -12,23 +11,21 @@ impl Task {
         let rx = ChannelR::get();
         let buf = rx.recv_async().await?;
         let msg = buf.to_msg()?;
-
+        godot_print!("Rust->收到UDP消息=>{:?}",msg);
         if let Some(tp) = msg.get_type() {
             match &tp as &str {
-                "IP-RSP" => PublicNetIP::write(msg.clone())?,
                 "ROOM-RSP" => {
-                    RoomIP::rsp(msg.clone())?
+                    RoomIP::rsp(msg.clone())?;
+                    RoomIP::check(buf.clone())?;
                 }
                 "P2P-ASK" => {
-                    godot_print!("收到P2P请求========================================================>{:?}",msg);
-                    // let _ = IpMap::ask(msg.clone());
-                    // IpMapList::rsp(msg.clone())?
+                    IpMap::accept(msg.clone()).await?;
+                    
                 }
-
-                // "P2P-RSP" => {
-                //     godot_print!("收到P2P回复========================================================>{:?}",msg);
-                //     IpMapList::rsp(msg.clone())?
-                // }
+                "P2P-RSP" => {
+                    godot_print!("收到P2P回复========================================================>{:?}",msg);
+                    IpMap::rsp(msg.clone())?
+                }
                     
                 // "P2P-CHK" => IpMapList::check2(msg.clone())?,
                 // "P2P-CHK" => {

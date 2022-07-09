@@ -4,7 +4,7 @@ use gdnative::prelude::*;
 mod apple;
 mod udp;
 use std::{thread, time};
-use udp::{ PublicNetIP, RoomIP, P2PQueue,P2PValue};
+use udp::{ RoomIP, P2PQueue,P2PValue};
 
 #[derive(NativeClass)]
 #[inherit(Node)]
@@ -23,30 +23,14 @@ impl Signal {
             udp::start();
         });
 
-        let ip = Self::public_net_ip_ask();
-        godot_print!("Rust->当前远程IP地址为：{:?}",ip);
-    }
-
-    fn public_net_ip_ask() -> String {
-        loop{
-            if let Ok(msg) = PublicNetIP::ask() {
-                println!("Rust->发送IP-ASK:{:?}...",msg);
-                let ten_millis = time::Duration::from_millis(1000);
-                thread::sleep(ten_millis);
-                if let Some(ip) = PublicNetIP::read() {
-                    println!("Rust->当前远程IP地址为：{:?}",ip);
-                    break ip.to_string();
-                }
-            }
-    
-        }
     }
 
 
     // 加入房间
     #[export]
     fn player_join_room(&self, _owner: &Node,key:String) {
-        if let Ok(msg) = RoomIP::ask(key){
+        if let Ok(msg) = RoomIP::ask(key.clone()){
+            RoomIP::key_set(key);
             godot_print!("Rust->发送加入房间请求{:?}",msg);
         };
  
@@ -125,8 +109,6 @@ mod tests {
             udp::start();
         });
 
-        let ipstr = Signal::public_net_ip_ask();
-        println!("{:?}",ipstr);
     }
 }
 
