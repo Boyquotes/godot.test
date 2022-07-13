@@ -1,4 +1,4 @@
-use super::{ChannelS, Msg};
+use super::{Launch, Msg};
 use flume::{unbounded, Receiver, Sender};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -75,7 +75,8 @@ impl P2PValue {
                 let mut msg = Msg::new(ipa.ip, port, type1.clone());
                 msg.set_object(self)?;
                 let buf = msg.to_buf()?;
-                ChannelS::set().send(buf)?;
+                // ChannelS::set().send(buf)?;
+                Launch::ready(buf)?
             }
         }
 

@@ -1,13 +1,9 @@
 use crate::apple::Result;
-use flume::{unbounded, Receiver, Sender};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use md5;
 
-lazy_static! {
-    static ref SEND_CHANNEL: (Sender<Buf>, Receiver<Buf>) = unbounded();
-    static ref RECV_CHANNEL: (Sender<Buf>, Receiver<Buf>) = unbounded();
-}
+
 
 /**
  * 数据编辑
@@ -88,30 +84,5 @@ impl Buf {
     pub fn get_md5(&self)-> String {
         let digest = md5::compute(self.bytes.clone());
         format!("{:?}",digest)
-    }
-}
-
-/**
- * 发送通道
- */
-pub struct ChannelS;
-impl ChannelS {
-    pub fn set() -> Sender<Buf> {
-        SEND_CHANNEL.0.clone()
-    }
-    pub fn get() -> Receiver<Buf> {
-        SEND_CHANNEL.1.clone()
-    }
-}
-/**
- * 接收通道
- */
-pub struct ChannelR;
-impl ChannelR {
-    pub fn set() -> Sender<Buf> {
-        RECV_CHANNEL.0.clone()
-    }
-    pub fn get() -> Receiver<Buf> {
-        RECV_CHANNEL.1.clone()
     }
 }

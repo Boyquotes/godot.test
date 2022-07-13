@@ -3,14 +3,13 @@ use serde::{Deserialize, Serialize};
 use spin::RwLock;
 use crate::apple::Result;
 use std::{net::SocketAddr, str::FromStr, sync::Arc};
-use super::{ChannelS, Msg,Buf,Cursor,Data,Sign};
-use super::godot_print;
+use super::{NetIP,Launch, Msg,Buf,Cursor,IpMap,Sign};
 
 
 
 lazy_static! {
-    static ref ROOM: Arc<RwLock<RoomIP>> = {
-        let room = RoomIP::new();
+    static ref ROOM: Arc<RwLock<Room>> = {
+        let room = Room::new();
         Arc::new(RwLock::new(room))
     };
 
@@ -21,30 +20,18 @@ lazy_static! {
 
 }
 
-/** 
- * 公网IP地址
- */
-#[derive(Debug, Eq, Hash, PartialEq, Serialize, Deserialize, Clone)]
-pub struct NetIP {
-    pub ip: String,
-    pub port: u16,
-}
-
-impl NetIP {
-    pub fn new(ip: String, port: u16) -> Self { Self { ip, port } }
-}
 
 
 /**
  * 房间玩家IP列表
  */
 #[derive(Debug, Serialize, Deserialize,Clone)]
-pub struct RoomIP {
+pub struct Room {
     pub myself: Option<NetIP>,
     pub ip_list: Vec<NetIP>
 }
 
-impl RoomIP {
+impl Room {
     pub fn new() -> Self {
         let ip_list = Vec::new();
         Self {myself:None,ip_list}
@@ -55,7 +42,7 @@ impl RoomIP {
         room.myself.clone()
     }
 
-    pub fn get_player() -> RoomIP {
+    pub fn get_player() -> Room {
         let room = ROOM.read();
         room.clone()
     }
@@ -84,7 +71,8 @@ impl RoomIP {
         let mut msg = Msg::new(ipa.ip().to_string(), ipa.port(), "ROOM-ASK".to_owned());
         msg.insert("ROOM".to_owned(), key);
         let buf = msg.to_buf()?;
-        ChannelS::set().send(buf)?;
+        // Launch::set().send(buf)?;
+        Launch::ready(buf)?;
         Ok(())
     }
 
@@ -93,13 +81,13 @@ impl RoomIP {
     * msg 接收到的消息
     */ 
     pub fn rsp(msg:Msg)->Result<()>{
-        let room: RoomIP = msg.get_object()?;
+        let room: Room = msg.get_object()?;
         // 更新映射表
         for i in room.ip_list.clone(){
-            if !Cursor::exists(&i){
-                let data = Data::ready(i);
-                Cursor::replace_one(data);
-                godot_print!("Rust->更新房间信息{:?}",room);
+            if !Cursor::exist(&i){
+                let ipm = IpMap::ready(i);
+                Cursor::replace_one(ipm);
+                // godot_print!("Rust->更新房间信息{:?}",room);
             }
         }
         
@@ -113,9 +101,10 @@ impl RoomIP {
     pub fn check(buf:Buf)->Result<()>{
         let mut msg = Msg::new(buf.ip.clone(), buf.port, "ROOM-CHK".to_owned());
         msg.insert("MD5".to_owned(), buf.get_md5());
-        godot_print!("Rust->收到房间信息,回复确认{:?}",msg);
+        // godot_print!("Rust->收到房间信息,回复确认{:?}",msg);
         let buf = msg.to_buf()?;
-        ChannelS::set().send(buf)?;
+        // ChannelS::set().send(buf)?;
+        Launch::ready(buf)?;
         Ok(())
     }
 }

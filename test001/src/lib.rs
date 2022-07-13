@@ -4,7 +4,7 @@ use gdnative::prelude::*;
 mod apple;
 mod udp;
 use std::{thread, time};
-use udp::{ RoomIP, P2PQueue,P2PValue};
+use udp::{ Room, P2PQueue,P2PValue};
 
 #[derive(NativeClass)]
 #[inherit(Node)]
@@ -29,8 +29,8 @@ impl Signal {
     // 加入房间
     #[export]
     fn player_join_room(&self, _owner: &Node,key:String) {
-        if let Ok(msg) = RoomIP::ask(key.clone()){
-            RoomIP::key_set(key);
+        if let Ok(msg) = Room::ask(key.clone()){
+            Room::key_set(key);
             godot_print!("Rust->发送加入房间请求{:?}",msg);
         };
  
@@ -100,8 +100,6 @@ mod tests {
 
     #[test]
     fn it_works() {
-
-
 
 
         thread::spawn(move || {

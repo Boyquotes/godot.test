@@ -1,31 +1,32 @@
 use super::p2p_value::{P2PQueue};
-use super::room::RoomIP;
-use super::p2p_ip_map::IpMap;
-use super::{ChannelR, Msg};
+use super::room::Room;
+use super::domain::{IpMap,Domain};
+use super::{Accept, Msg};
 use crate::apple::Result;
 use crate::godot_print;
 
-pub struct Task;
-impl Task {
+pub struct Process;
+impl Process {
     pub async fn begin() -> Result<Msg> {
-        let rx = ChannelR::get();
-        let buf = rx.recv_async().await?;
+        let buf = Accept::get_async().await?;
         let msg = buf.to_msg()?;
         godot_print!("Rust->收到UDP消息=>{:?}",msg);
         if let Some(tp) = msg.get_type() {
             match &tp as &str {
                 "ROOM-RSP" => {
-                    RoomIP::rsp(msg.clone())?;
-                    RoomIP::check(buf.clone())?;
+                    Room::rsp(msg.clone())?;
+                    Room::check(buf.clone())?;
                 }
                 "P2P-ASK" => {
-                    IpMap::accept(msg.clone()).await?;
+                    Domain::accept(msg.clone()).await?;
                     
                 }
                 "P2P-RSP" => {
-                    IpMap::rsp(msg.clone())?
+                    Domain::rsp(msg.clone())?
                 }
-                "ACTION-NEW" => P2PQueue::recv_to_queue(msg.clone()).await?,
+                "ACTION-NEW" => {
+                    P2PQueue::recv_to_queue(msg.clone()).await?
+                }
                 _ => (),
             }
         }

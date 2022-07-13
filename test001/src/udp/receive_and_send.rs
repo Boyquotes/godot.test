@@ -1,4 +1,4 @@
-use super::{Buf, ChannelR, ChannelS, Msg};
+use super::{Buf, Accept, Launch};
 use crate::apple::conf::ipadd::URL;
 use crate::apple::Result;
 use std::{net::SocketAddr, str::FromStr, sync::Arc};
@@ -12,10 +12,10 @@ use tokio::net::UdpSocket;
  * fn udp_accept(&self) 从socket接收数据，转存数据RQueue队列通道
  */
 #[derive(Debug, Clone)]
-pub struct Task {
+pub struct UdpServer {
     sock: Arc<UdpSocket>,
 }
-impl Task {
+impl UdpServer {
     pub async fn new() -> Result<Self> {
         let add = URL::local_server();
         let add = SocketAddr::from_str(&add)?;
@@ -25,23 +25,20 @@ impl Task {
         })
     }
 
-    pub async fn udp_sender(&self) -> Result<Msg> {
-        let send_buf = ChannelS::get().recv_async().await?;
-        self.sock
-            .send_to(&send_buf.bytes, send_buf.get_target())
-            .await?;
-        Ok(send_buf.to_msg()?)
+    pub async fn udp_sender(&self) -> Result<()> {
+        let buf = Launch::go_async().await?;
+        self.sock.send_to(&buf.bytes, buf.get_target()).await?;
+        Ok(())
     }
 
-    pub async fn udp_accept(&self) -> Result<Msg> {
+    pub async fn udp_accept(&self) -> Result<()> {
         let mut recv_buf = [0; 1024];
         let (len, addr) = self.sock.recv_from(&mut recv_buf).await?;
         let ip = addr.ip().to_string();
         let port = addr.port();
         let bytes = recv_buf[..len].to_vec();
         let buf = Buf::new(ip, port, bytes);
-        ChannelR::set().send_async(buf.clone()).await?;
-        let msg = buf.to_msg()?;
-        Ok(msg)
+        Accept::put_async(buf).await?;
+        Ok(())
     }
 }
