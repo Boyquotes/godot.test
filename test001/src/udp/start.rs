@@ -58,6 +58,7 @@ pub async fn start() {
 
     loop {
         println!("Rust->当前玩家：{:?}", Room::get_player());
+        println!("Rust->公网IP：{:?}", Cursor::get_host());
         println!("Rust->玩家映射：{:?}", Cursor::find());
 
        

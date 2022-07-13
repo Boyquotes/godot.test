@@ -55,6 +55,7 @@ impl Cursor {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Sign {
     Ready,
+    Wait,
     Test,
     Rigth(u16),
 }
@@ -66,11 +67,11 @@ pub struct IpMap{
 }
 
 impl IpMap {
-    pub fn new(ipa: NetIP, sign: Sign) -> Self { 
-        Self { ipa, sign } 
+    pub fn new(ipa:NetIP, sign:Sign) -> Self { 
+        Self { ipa, sign} 
     }
-    pub fn ready(ipa:NetIP)->Self{
-        Self {ipa, sign:Sign::Ready} 
+    pub fn ready(&self)->Self{
+        Self {ipa:self.ipa.clone(), sign:Sign::Ready} 
     }
     pub fn test(&self)->Self{
         Self{ipa:self.ipa.clone(), sign:Sign::Test}   

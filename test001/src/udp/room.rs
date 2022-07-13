@@ -83,9 +83,14 @@ impl Room {
     pub fn rsp(msg:Msg)->Result<()>{
         let room: Room = msg.get_object()?;
         // 更新映射表
+        if let Some(ipn) = room.myself.clone(){
+            Cursor::set_host(ipn)
+        }
+
+
         for i in room.ip_list.clone(){
             if !Cursor::exist(&i){
-                let ipm = IpMap::ready(i);
+                let ipm = IpMap::new(i,Sign::Test);
                 Cursor::replace_one(ipm);
                 // godot_print!("Rust->更新房间信息{:?}",room);
             }
