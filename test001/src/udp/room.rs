@@ -71,7 +71,6 @@ impl Room {
         let mut msg = Msg::new(ipa.ip().to_string(), ipa.port(), "ROOM-ASK".to_owned());
         msg.insert("ROOM".to_owned(), key);
         let buf = msg.to_buf()?;
-        // Launch::set().send(buf)?;
         Launch::ready(buf)?;
         Ok(())
     }

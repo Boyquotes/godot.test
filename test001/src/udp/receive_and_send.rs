@@ -3,6 +3,8 @@ use crate::apple::conf::ipadd::URL;
 use crate::apple::Result;
 use std::{net::SocketAddr, str::FromStr, sync::Arc};
 use tokio::net::UdpSocket;
+use crate::godot_print;
+
 
 /**UdpServer
  * UDP发送和接收服务
@@ -27,6 +29,9 @@ impl UdpServer {
 
     pub async fn udp_sender(&self) -> Result<()> {
         let buf = Launch::go_async().await?;
+
+        godot_print!("发送UDP数据{:?}",buf.to_msg());
+
         self.sock.send_to(&buf.bytes, buf.get_target()).await?;
         Ok(())
     }

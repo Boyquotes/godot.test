@@ -19,7 +19,7 @@ pub async fn start() {
     // 接收数据
     tokio::spawn(async move {
         while let Ok(msg) = task2.udp_accept().await {
-            // godot_print!("Rust->接收当前数据:{:?}", msg);
+            
         }
     });
 
@@ -36,8 +36,6 @@ pub async fn start() {
         godot_print!("Rust->启动p2p探测。。。");
         while let Ok(()) = Domain::start().await {
             // godot_print!("Rust->p2p探测执行");
-                
-            
         }
     });
 
@@ -49,8 +47,9 @@ pub async fn start() {
                 if let Ok(()) = Room::ask(key){
                     godot_print!("Rust-> 心跳发送")
                 }
+                sleep(Duration::from_secs(30)).await;
             }
-            sleep(Duration::from_secs(30)).await;
+            sleep(Duration::from_secs(1)).await;
         }
     });
 

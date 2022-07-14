@@ -5,12 +5,14 @@ use crate::apple::Result;
 // use std::{net::SocketAddr, str::FromStr, sync::Arc};
 use super::{Launch, Buf, Msg, NetIP};
 use tokio::time::{sleep, Duration};
+
+
+
 use crate::godot_print;
-use std::collections::HashMap;
 use chashmap::CHashMap;
 use spin::RwLock;
-use std::{net::SocketAddr, str::FromStr, sync::Arc};
-
+use std::sync::Arc;
+use rayon::prelude::*;
 
 
 lazy_static! {
@@ -99,12 +101,18 @@ impl Domain {
      */
     pub async fn start()-> Result<()> {
         for (ipa,sign) in Cursor::find().data {
-            let ipm = IpMap::new(ipa,sign);
-            Self::ask(ipm).await?;
+            tokio::spawn(async move {
+                let ipm = IpMap::new(ipa,sign);
+                if let Err(e)=Self::ask(ipm).await{
+                    println!("{:?}",e);
+                }
+            });
         }
-        sleep(Duration::from_secs(65)).await;
+        sleep(Duration::from_secs(60)).await;
         Ok(())
     }
+
+    
 
     async fn ask(ipm:IpMap)->Result<()>{
         if let Sign::Test = ipm.sign{

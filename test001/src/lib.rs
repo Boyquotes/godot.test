@@ -29,11 +29,7 @@ impl Signal {
     // 加入房间
     #[export]
     fn player_join_room(&self, _owner: &Node,key:String) {
-        if let Ok(msg) = Room::ask(key.clone()){
-            Room::key_set(key);
-            godot_print!("Rust->发送加入房间请求{:?}",msg);
-        };
- 
+        Room::key_set(key);    
     }
 
     #[export]
