@@ -57,8 +57,7 @@ impl Cursor {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Sign {
     Ready,
-    Wait,
-    Test,
+    Wait(u8),
     Rigth(u16),
 }
 
@@ -75,9 +74,20 @@ impl IpMap {
     pub fn ready(&self)->Self{
         Self {ipa:self.ipa.clone(), sign:Sign::Ready} 
     }
-    pub fn test(&self)->Self{
-        Self{ipa:self.ipa.clone(), sign:Sign::Test}   
+    pub fn wait(&self)->Self{
+        match self.sign{
+            Sign::Ready=>{
+                Self {ipa:self.ipa.clone(), sign:Sign::Wait(0)} 
+            }
+            Sign::Wait(s) => {
+                Self {ipa:self.ipa.clone(), sign:Sign::Wait(s+1)} 
+            }
+            Sign::Rigth(_) => {
+                self.clone()
+            },
+        }
     }
+
     pub fn rigth(&self,port:u16)->Self{
         Self{ipa:self.ipa.clone(), sign:Sign::Rigth(port)}
     }
@@ -101,28 +111,37 @@ impl Domain {
      */
     pub async fn start()-> Result<()> {
         for (ipa,sign) in Cursor::find().data {
-            tokio::spawn(async move {
-                let ipm = IpMap::new(ipa,sign);
-                if let Err(e)=Self::ask(ipm).await{
-                    println!("{:?}",e);
-                }
-            });
+            let ipm = IpMap::new(ipa,sign);
+            Self::ask(ipm).await?;      
         }
-        sleep(Duration::from_secs(60)).await;
+        sleep(Duration::from_secs(1)).await;
         Ok(())
     }
 
     
 
     async fn ask(ipm:IpMap)->Result<()>{
-        if let Sign::Test = ipm.sign{
-            let mut msg = Msg::new(ipm.ipa.ip, ipm.ipa.port, "P2P-ASK".to_owned());
-            if let Some(ipn) = Cursor::get_host(){
-                msg.set_object(ipn)?;
-                let buf = msg.to_buf()?;
-                Launch::ready_async(buf).await?;
+        let ipm  = match ipm.sign {
+            Sign::Ready=>{
+                let mut msg = Msg::new(ipm.ipa.ip.clone(), ipm.ipa.port, "P2P-ASK".to_owned());
+                if let Some(ipn) = Cursor::get_host(){
+                    msg.set_object(ipn)?;
+                    let buf = msg.to_buf()?;
+                    Launch::ready_async(buf).await?;
+                }
+
+                ipm.wait()
             }
-        }
+            Sign::Wait(n)=>{
+                if n >= 60{
+                    ipm.ready()
+                }else{
+                    ipm.wait()
+                }
+            }
+            _=>{ipm}
+        };
+        Cursor::replace_one(ipm);
         Ok(())
     }
 
@@ -131,12 +150,14 @@ impl Domain {
     * msg 接收到的消息
     */ 
     pub async fn accept(msg:Msg)->Result<Msg>{
+        // 接收
         let nip:NetIP = msg.get_object()?;
         let ipm = IpMap::new(nip,Sign::Rigth(msg.port));
         Cursor::replace_one(ipm);
+        // 回复
         let mut msg = Msg::new(msg.ip, msg.port, "P2P-RSP".to_owned());
-        if let Some(ipn) = Cursor::get_host(){
-            msg.set_object(ipn)?;
+        if let Some(ip) = Cursor::get_host(){
+            msg.set_object(ip)?;
             let buf = msg.to_buf()?;
             Launch::ready_async(buf).await?;
         }

@@ -89,9 +89,8 @@ impl Room {
 
         for i in room.ip_list.clone(){
             if !Cursor::exist(&i){
-                let ipm = IpMap::new(i,Sign::Test);
-                Cursor::replace_one(ipm);
-                // godot_print!("Rust->更新房间信息{:?}",room);
+                let ip = IpMap::new(i,Sign::Ready);
+                Cursor::replace_one(ip);
             }
         }
         
@@ -105,9 +104,7 @@ impl Room {
     pub fn check(buf:Buf)->Result<()>{
         let mut msg = Msg::new(buf.ip.clone(), buf.port, "ROOM-CHK".to_owned());
         msg.insert("MD5".to_owned(), buf.get_md5());
-        // godot_print!("Rust->收到房间信息,回复确认{:?}",msg);
         let buf = msg.to_buf()?;
-        // ChannelS::set().send(buf)?;
         Launch::ready(buf)?;
         Ok(())
     }
