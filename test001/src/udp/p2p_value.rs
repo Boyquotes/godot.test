@@ -1,9 +1,8 @@
-use super::{Launch, Msg};
+use super::*;
 use flume::{unbounded, Receiver, Sender};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use crate::apple::Result;
-use super::{Cursor,Sign};
+
 
 lazy_static! {
     static ref P2PQUEUE: (Sender<P2PValue>, Receiver<P2PValue>) = unbounded();
@@ -71,13 +70,30 @@ impl P2PValue {
         
         for (ipa,sign) in Cursor::find().data{
             let type1: String = "ACTION-NEW".to_owned();
-            if let Sign::Rigth(port)=sign{
-                let mut msg = Msg::new(ipa.ip, port, type1.clone());
-                msg.set_object(self)?;
-                let buf = msg.to_buf()?;
-                // ChannelS::set().send(buf)?;
-                Launch::ready(buf)?
+            
+            match sign{
+                Sign::Rigth(port)=>{
+                    let mut msg = Msg::new(ipa.ip, port, type1.clone());
+                    msg.set_object(self)?;
+                    let buf = msg.to_buf()?;
+                    Launch::ready(buf)?
+                }
+                Sign::Wait(_)=>{
+
+                    let url = ipadd::URL::remote_server();
+                    let ipadd = SocketAddr::from_str(&url)?;
+                    let mut msg = Msg::new(ipadd.ip().to_string(), ipadd.port(), type1.clone());
+                    let target = format!("{}:{}",ipa.ip,ipa.port);
+                    msg.insert("target".to_owned(), target);
+                    msg.set_object(self)?;
+                    let buf = msg.to_buf()?;
+                    Launch::ready(buf)?;
+
+                }
+                _=>{}
             }
+
+
         }
 
         Ok(())

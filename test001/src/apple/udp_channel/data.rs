@@ -54,6 +54,9 @@ impl Msg {
         let object = serde_json::from_str(a).unwrap();
         Ok(object)
     }
+    pub fn get_target(&self) -> String {
+        format!("{}:{}", self.ip, self.port)
+    }
 }
 
 /**

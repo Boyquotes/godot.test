@@ -1,18 +1,8 @@
-// use crate::apple::conf::ipadd;
-use serde::{Deserialize, Serialize};
-// use spin::{RwLock, RwLockWriteGuard};
-use crate::apple::Result;
-// use std::{net::SocketAddr, str::FromStr, sync::Arc};
-use super::{Launch, Buf, Msg, NetIP};
+use super::*;
 use tokio::time::{sleep, Duration};
-
-
-
-use crate::godot_print;
 use chashmap::CHashMap;
 use spin::RwLock;
 use std::sync::Arc;
-use rayon::prelude::*;
 
 
 lazy_static! {
@@ -51,47 +41,6 @@ impl Cursor {
 }
 
 
-/**
- * 
- */
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum Sign {
-    Ready,
-    Wait(u8),
-    Rigth(u16),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct IpMap{
-    pub ipa:NetIP,
-    pub sign:Sign,
-}
-
-impl IpMap {
-    pub fn new(ipa:NetIP, sign:Sign) -> Self { 
-        Self { ipa, sign} 
-    }
-    pub fn ready(&self)->Self{
-        Self {ipa:self.ipa.clone(), sign:Sign::Ready} 
-    }
-    pub fn wait(&self)->Self{
-        match self.sign{
-            Sign::Ready=>{
-                Self {ipa:self.ipa.clone(), sign:Sign::Wait(0)} 
-            }
-            Sign::Wait(s) => {
-                Self {ipa:self.ipa.clone(), sign:Sign::Wait(s+1)} 
-            }
-            Sign::Rigth(_) => {
-                self.clone()
-            },
-        }
-    }
-
-    pub fn rigth(&self,port:u16)->Self{
-        Self{ipa:self.ipa.clone(), sign:Sign::Rigth(port)}
-    }
-}
 
 /** 
  * 网络映射
@@ -128,9 +77,10 @@ impl Domain {
                     msg.set_object(ipn)?;
                     let buf = msg.to_buf()?;
                     Launch::ready_async(buf).await?;
+                    ipm.wait()
+                }else{
+                    ipm.ready()
                 }
-
-                ipm.wait()
             }
             Sign::Wait(n)=>{
                 if n >= 60{
