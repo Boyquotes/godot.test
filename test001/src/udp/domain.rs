@@ -70,28 +70,27 @@ impl Domain {
     
 
     async fn ask(ipm:IpMap)->Result<()>{
-        let ipm  = match ipm.sign {
+        match ipm.sign {
             Sign::Ready=>{
                 let mut msg = Msg::new(ipm.ipa.ip.clone(), ipm.ipa.port, "P2P-ASK".to_owned());
                 if let Some(ipn) = Cursor::get_host(){
                     msg.set_object(ipn)?;
                     let buf = msg.to_buf()?;
                     Launch::ready_async(buf).await?;
-                    ipm.wait()
-                }else{
-                    ipm.ready()
+                    Cursor::replace_one(ipm.wait());
                 }
             }
             Sign::Wait(n)=>{
                 if n >= 60{
-                    ipm.ready()
+                    Cursor::replace_one(ipm.ready());
                 }else{
-                    ipm.wait()
+                    Cursor::replace_one(ipm.wait());
+                    
                 }
             }
-            _=>{ipm}
+            _=>{}
         };
-        Cursor::replace_one(ipm);
+        
         Ok(())
     }
 
